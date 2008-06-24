@@ -89,19 +89,19 @@ module DemocracyInAction
       end
 
       # make a HTTP post
-      res = sendRequest(@urls['get'], options)
+      body = sendRequest(@urls['get'], options)
 
       # interpret the results...
       if (options['desc'])
         # the description is a different format and needs a different parser
         listener = DIA_Desc_Listener.new
-        parser = Parsers::StreamParser.new(res.body, listener)
+        parser = Parsers::StreamParser.new(body, listener)
         parser.parse
         return listener.result
       else
         # everything else has the same db format
         listener = DIA_Get_Listener.new
-        parser = Parsers::StreamParser.new(res.body, listener)
+        parser = Parsers::StreamParser.new(body, listener)
         parser.parse
         if (options['count'])
           return listener.count
@@ -123,11 +123,11 @@ module DemocracyInAction
         options['link'] = links
       end
 
-      res = sendRequest(@urls['process'], options)
+      body = sendRequest(@urls['process'], options)
 
       # i think the result is always a number (id) surrounded
       # by too much whitespace
-      return res.body.strip
+      return body.strip
     end
 
     # delete code
@@ -143,13 +143,13 @@ module DemocracyInAction
       options.delete('simple')
       options['xml'] = true
 
-      res = sendRequest(@urls['delete'], criteria)
+      body = sendRequest(@urls['delete'], criteria)
     
       # if it contains '<success', it worked, otherwise a failure
-      if res.body.include?('<success')
+      if body.include?('<success')
         return true
       else
-        puts res.body if $DEBUG
+        puts body if $DEBUG
         return false
       end
     end
@@ -262,7 +262,7 @@ module DemocracyInAction
           res.error!
       end
     
-      return res
+      return res.body
     end
 
   end
