@@ -44,6 +44,10 @@ module DemocracyInAction
       end
     end
 
+		def connected?
+			@user && @password && @orgKey
+		end
+
     # There are a lot of functions that take the same variable names..
     # Here is a description of common arguments
     #   table - SQL table name (String)
@@ -214,7 +218,7 @@ module DemocracyInAction
     # specialized code to handle multiple form entries with same key name
     # also does some error handling
     def sendRequest(my_url, options, redirects = 5)
-      if not DIA_ENABLED
+      unless defined?( DIA_ENABLED ) and DIA_ENABLED
         return Net::HTTP.new( 'www.radicaldesigns.org', 80 ).start {|http| http.request( Net::HTTP::Get.new('/'))}
       end
             
