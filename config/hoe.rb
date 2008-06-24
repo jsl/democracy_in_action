@@ -1,6 +1,6 @@
 require 'democracy_in_action/version'
 
-AUTHOR = ['Seth Walker', 'Ethan Snyder-Frey']
+AUTHOR = 'Seth Walker, Ethan Snyder-Frey'
 EMAIL = "seth@radicaldesigns.org"
 DESCRIPTION = "resources for interacting with the DemocracyInAction online organizing platform (http://www.democracyinaction.org)"
 GEM_NAME = 'democracy_in_action' # what ppl will type to install your gem
