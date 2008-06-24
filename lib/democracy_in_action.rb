@@ -11,6 +11,7 @@ require 'democracy_in_action/desc_parse'
 require 'democracy_in_action/api'
 
 #legacy
+=begin
 class DIA_API
   def DIA_API.create(options = {})
     warn "#{caller[1]}:Warning: DIA_API.create is deprecated.  Use the gem instead"
@@ -26,3 +27,4 @@ end
 
 class DIA_API_Simple < DemocracyInAction::API
 end
+=end

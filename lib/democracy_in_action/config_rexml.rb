@@ -18,7 +18,15 @@ _tag_match = /^<((?>#{_name_str}))\s*((?>\s+#{_name_str}\s*=\s*(["']).*?\3)*)\s*
 _close_match = /^\s*<\/(#{_name_str})\s*>/um
 _identity = /^([!\*\w\-]+)(\s+#{_ncname_str})?(\s+["'].*?['"])?(\s+['"].*?["'])?/u
 
-# and now change all the constants (this will produce warnings!)
+# and now remove the old values
+REXML::Parsers::BaseParser.__send__(:remove_const, :NCNAME_STR)
+REXML::Parsers::BaseParser.__send__(:remove_const, :NAME_STR)
+REXML::Parsers::BaseParser.__send__(:remove_const, :ATTRIBUTE_PATTERN)
+REXML::Parsers::BaseParser.__send__(:remove_const, :CLOSE_MATCH)
+REXML::Parsers::BaseParser.__send__(:remove_const, :TAG_MATCH)
+REXML::Parsers::BaseParser.__send__(:remove_const, :IDENTITY)
+
+# and now change all the constants
 REXML::Parsers::BaseParser.const_set("NCNAME_STR", _ncname_str)
 REXML::Parsers::BaseParser.const_set("NAME_STR", _name_str)
 REXML::Parsers::BaseParser.const_set("ATTRIBUTE_PATTERN", _attribute_pattern)
