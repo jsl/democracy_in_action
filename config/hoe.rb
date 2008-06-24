@@ -1,8 +1,8 @@
 require 'democracy_in_action/version'
 
-AUTHOR = 'FIXME full name'  # can also be an array of Authors
-EMAIL = "FIXME email"
-DESCRIPTION = "description of gem"
+AUTHOR = ['Seth Walker', 'Ethan Snyder-Frey']
+EMAIL = "seth@radicaldesigns.org"
+DESCRIPTION = "resources for interacting with the DemocracyInAction online organizing platform (http://www.democracyinaction.org)"
 GEM_NAME = 'democracy_in_action' # what ppl will type to install your gem
 RUBYFORGE_PROJECT = 'democracy_in_action' # The unix name for your project
 HOMEPATH = "http://#{RUBYFORGE_PROJECT}.rubyforge.org"
