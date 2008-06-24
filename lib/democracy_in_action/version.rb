@@ -1,4 +1,4 @@
-module DemocracyInAction
+module DemocracyInAction #:nodoc:
   module VERSION #:nodoc:
     MAJOR = 0
     MINOR = 0
