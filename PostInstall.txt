@@ -1,0 +1,7 @@
+
+For more information on democracy_in_action, see http://democracy_in_action.rubyforge.org
+
+NOTE: Change this information in PostInstall.txt 
+You can also delete it if you don't want it.
+
+
