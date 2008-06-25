@@ -3,7 +3,7 @@ require File.dirname(__FILE__) + '/../../spec_helper'
 describe "DemocracyInAction::API Parser" do
 
 	before do
-    @api = DemocracyInAction::API.new( *api_arguments )
+    @api = DemocracyInAction::API.new( api_arguments )
 	end
 
   describe "parsing out the count" do

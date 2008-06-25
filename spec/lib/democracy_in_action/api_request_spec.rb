@@ -2,9 +2,10 @@ require File.dirname(__FILE__) + "/../../spec_helper"
 
 describe DemocracyInAction::API do
   before do
-    @api = DemocracyInAction::API.new( *api_arguments ) 
+    @api = DemocracyInAction::API.new( api_arguments ) 
     #Net::HTTP::Post.stub!(:new).and_return(stub_everything)
   end
+
   describe "buildBody" do
     it "should convert key value pair into string" do
       body = @api.send(:buildBody, {"key" => "123456"})
