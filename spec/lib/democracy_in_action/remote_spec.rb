@@ -2,7 +2,7 @@ require File.dirname(__FILE__) + "/../../spec_helper"
 
 describe "DIA Service" do
   before do
-    @api = DemocracyInAction::API.new( *working_api_arguments ) 
+    @api = DemocracyInAction::API.new( working_api_arguments ) 
   end
   it "should accept key value pairs that contain arrays in the body of the request post" do
     pending

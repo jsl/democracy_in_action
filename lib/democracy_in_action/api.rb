@@ -1,47 +1,42 @@
 module DemocracyInAction
   class API
-    include DemocracyInAction::Util
+    #include DemocracyInAction::Util
 
-    @@DEFAULT_URLS = { 'get' => 'http://api.democracyinaction.org/dia/api/get.jsp',
-                       'process' => 'http://api.democracyinaction.org/dia/api/process.jsp',
-                       'delete' => 'http://api.democracyinaction.org/dia/api/delete.jsp'
-    }
+    DOMAINS = { 
+      :salsa => { 
+        :get     => 'http://salsa.democracyinaction.org/dia/api/get.jsp',
+        :process => 'http://salsa.democracyinaction.org/dia/api/process.jsp',
+        :delete  => 'http://salsa.democracyinaction.org/dia/api/delete.jsp'
+        },
+      :wiredforchange => { 
+        :get     => 'http://salsa.wiredforchange.com/dia/api/get.jsp',
+        :process => 'http://salsa.wiredforchange.com/dia/api/process.jsp',
+        :delete  => 'http://salsa.wiredforchange.com/dia/deleteEntry.jsp'
+        },
+      :org2 => { 
+        :get     => 'http://org2.democracyinaction.org/dia/api/get.jsp',
+        :process => 'http://org2.democracyinaction.org/dia/api/process.jsp',
+        :delete  => 'http://org2.democracyinaction.org/dia/api/delete.jsp'
+        }
+      }
 
-    attr_reader :user, :password, :orgkey
+    attr_reader :username, :password, :orgkey, :domain
     attr_reader :urls
 
     # options...  (default: above urls, no auth)
-    # authCodes => [name, password, orgKey]
+    # authCodes => [name, password, orgkey]
     # urls => { 'get' => get_url, 'process'..., 'delete'..., 'unsub'... }
     def initialize(options = {})
-      #@cookies = Array.new
-      @urls = @@DEFAULT_URLS.clone
-      return if options.empty?
+      unless options && options[:username] && options[:password] && options[:orgkey] && ( options[:domain] || options[:urls] ) || self.class.disabled?
+        raise ConnectionInvalid.new("Must specify :username, :password, :orgkey, and ( :domain or :url )")
+      end 
 
-      # accept authCodes option as Array
-      if (options['authCodes'])
-        if (options['authCodes'].class != Array)
-          raise(StandardError, "authCodes must be Array [name, password, orgkey]")
-        end
-        @user, @password, @orgKey = options['authCodes']
-      end
+      @username, @password, @orgkey, @domain = options.delete(:username), options.delete(:password), options.delete(:orgkey), options.delete(:domain)
 
-      # accept urls option as Hash
-      if (options['urls'])
-        # make sure it's a Hash argument
-        new_urls = options['urls']
-        if (new_urls.class != Hash)
-          raise(StandardError, "urls option must be Hash")
-        end
-
-        # make sure the keys are all valid and save them
-        new_urls.each do |key, value|
-          if (! @@DEFAULT_URLS[key])
-            raise(StandardError, "Bad url option - #{key}")
-          end
-          @urls[key] = value
-        end
-      end
+      @urls = options[:urls] || DOMAINS[@domain]
+      raise ConnectionInvalid.new("Requested domain is not supported.  Use (#{DOMAINS.keys.join(', ')}) or specify a custom array in :urls") unless @urls
+      raise ConnectionInvalid.new("Urls must be a hash") unless @urls.is_a?(Hash)
+      raise ConnectionInvalid.new("Urls must include at least :get, :process, and :delete") unless @urls[:get] and @urls[:process] and @urls[:delete]
     end
 
     def cookies
@@ -49,7 +44,8 @@ module DemocracyInAction
     end
 
     def connected?
-      @user && @password && @orgKey
+      #!(@username && @password && @orgkey && @domain ).nil?
+      API.disabled? || !(@username && @password && @orgkey && @domain && get( 'supporter', 'desc' => 1 )).nil?
     end
 
     # There are a lot of functions that take the same variable names..
@@ -84,14 +80,19 @@ module DemocracyInAction
     #           String:  same as { 'key' => String }
     def get(table, options = nil)
       # make a HTTP post
-      body = sendRequest(@urls['get'], process_get_options(table, options))
+      body = sendRequest(@urls[:get], process_get_options(table, options))
 
       # interpret the results...
       # the description is a different format and needs a different parser
+      return nil if parse_error(body)
       return parse_description( body ) if (options['desc'])
       return parse_count if (options['count'])
 
       parse_records( body )
+    end
+
+    def parse_error(xml)
+      xml =~ /<error>Invalid login/
     end
 
     def parse_count(xml)  
@@ -121,7 +122,7 @@ module DemocracyInAction
     #           String: same as { 'key' => String }
     # TODO: document link option???
     def process(table, options = nil)
-      sendRequest(@urls['process'], process_process_options( table, options )).strip
+      sendRequest(@urls[:process], process_process_options( table, options )).strip
     end
 
     # delete code
@@ -137,7 +138,7 @@ module DemocracyInAction
       options.delete('simple')
       options['xml'] = true
 
-      body = sendRequest(@urls['delete'], criteria)
+      body = sendRequest(@urls[:delete], criteria)
     
       # if it contains '<success', it worked, otherwise a failure
       if body.include?('<success')
@@ -237,9 +238,9 @@ module DemocracyInAction
       self.cookies.each { |c| req.add_field('Cookie', c) }
       
       # import authentication information
-      options['organization_KEY'] = @orgKey if (@orgKey)
-      if (@user && @password)
-        options['user'] = @user
+      options['organization_KEY'] = @orgkey if (@orgkey)
+      if (@username && @password)
+        options['user'] = @username
         options['password'] = @password
       end
 
@@ -275,4 +276,6 @@ module DemocracyInAction
     end
 
   end
+
+  class ConnectionInvalid < ArgumentError; end
 end
