@@ -31,4 +31,8 @@ Spec::Runner.configure do |config|
 			Net::HTTP::Post.stub!(:new).and_return(response)
 		end
 	end
+
+  def fixture_file_read(filename)
+    File.read(File.dirname(__FILE__) + '/fixtures/' + filename)
+  end
 end

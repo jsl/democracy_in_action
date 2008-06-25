@@ -92,24 +92,34 @@ module DemocracyInAction
       body = sendRequest(@urls['get'], options)
 
       # interpret the results...
-      if (options['desc'])
-        # the description is a different format and needs a different parser
-        listener = DIA_Desc_Listener.new
-        parser = Parsers::StreamParser.new(body, listener)
-        parser.parse
-        return listener.result
-      else
-        # everything else has the same db format
-        listener = DIA_Get_Listener.new
-        parser = Parsers::StreamParser.new(body, listener)
-        parser.parse
-        if (options['count'])
-          return listener.count
-        else
-          return listener.items
-        end
-      end
+	  # the description is a different format and needs a different parser
+	  return parse_description( body ) if (options['desc'])
+	  return parse_count if (options['count'])
+
+	  parse_records( body )
     end
+
+	def parse_count(xml)	
+	  parse(xml).count
+	end
+	
+    def parse(xml)
+	  listener = DIA_Get_Listener.new
+	  parser = Parsers::StreamParser.new(xml, listener)
+	  parser.parse
+	  listener
+    end
+
+	def parse_records(xml)
+	  parse(xml).items
+	end
+
+	def parse_description(xml)
+	  listener = DIA_Desc_Listener.new
+	  parser = Parsers::StreamParser.new(xml, listener)
+	  parser.parse
+	  listener.result
+	end
 
     # options - Hash keys: 'key', 'debug' <br>
     #
