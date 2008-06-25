@@ -14,9 +14,9 @@ module DemocracyInAction
     # authCodes => [name, password, orgKey]
     # urls => { 'get' => get_url, 'process'..., 'delete'..., 'unsub'... }
     def initialize(options = {})
-      @cookies = Array.new
+      #@cookies = Array.new
       @urls = @@DEFAULT_URLS.clone
-      return unless options
+      return if options.empty?
 
       # accept authCodes option as Array
       if (options['authCodes'])
@@ -44,20 +44,24 @@ module DemocracyInAction
       end
     end
 
-		def connected?
-			@user && @password && @orgKey
-		end
+    def cookies
+      @cookies ||= []
+    end
+
+    def connected?
+      @user && @password && @orgKey
+    end
 
     # There are a lot of functions that take the same variable names..
     # Here is a description of common arguments
     #   table - SQL table name (String)
     #   options - SQL options (Hash) (ex. {"limit" => 4} )
-    #   		(sometimes it takes one value with assumed name,
-    #   		 read individual functions for more info)
+    #       (sometimes it takes one value with assumed name,
+    #        read individual functions for more info)
     #   data - SQL column names/values to insert (Hash)
     #           (ex.  {'key' => key, 'First_Name' => name } )
     #   criteria - SQL column names/values for WHERE clause (HASH)
-    #   	    (ex. {'Email' => email} mean "WHERE Email == email" )
+    #         (ex. {'Email' => email} mean "WHERE Email == email" )
     # More details on individual functions
     #
     # API notes:  there are some bug(?) in the DIA side...
@@ -79,65 +83,45 @@ module DemocracyInAction
     #
     #           String:  same as { 'key' => String }
     def get(table, options = nil)
-      options = processOptions(table, options)
-
-      # if multiple keys (array), join keys with comma
-      # (only for get command)
-      if options['key'] && (options['key'].class == Array) then
-        value = options['key'].join(', ')
-        options['key'] = value	
-      end
-
       # make a HTTP post
-      body = sendRequest(@urls['get'], options)
+      body = sendRequest(@urls['get'], process_get_options(table, options))
 
       # interpret the results...
-	  # the description is a different format and needs a different parser
-	  return parse_description( body ) if (options['desc'])
-	  return parse_count if (options['count'])
+      # the description is a different format and needs a different parser
+      return parse_description( body ) if (options['desc'])
+      return parse_count if (options['count'])
 
-	  parse_records( body )
+      parse_records( body )
     end
 
-	def parse_count(xml)	
-	  parse(xml).count
-	end
-	
+    def parse_count(xml)  
+      parse(xml).count
+    end
+    
     def parse(xml)
-	  listener = DIA_Get_Listener.new
-	  parser = Parsers::StreamParser.new(xml, listener)
-	  parser.parse
-	  listener
+      listener = DIA_Get_Listener.new
+      parser = Parsers::StreamParser.new(xml, listener)
+      parser.parse
+      listener
     end
 
-	def parse_records(xml)
-	  parse(xml).items
-	end
+    def parse_records(xml)
+      parse(xml).items
+    end
 
-	def parse_description(xml)
-	  listener = DIA_Desc_Listener.new
-	  parser = Parsers::StreamParser.new(xml, listener)
-	  parser.parse
-	  listener.result
-	end
+    def parse_description(xml)
+      listener = DIA_Desc_Listener.new
+      parser = Parsers::StreamParser.new(xml, listener)
+      parser.parse
+      listener.result
+    end
 
     # options - Hash keys: 'key', 'debug' <br>
     #
     #           String: same as { 'key' => String }
     # TODO: document link option???
     def process(table, options = nil)
-      options = processOptions(table, options)
-      # special code to handle multiple links...
-      if options['link'] then
-        links = linkHashToQueryStringArray(options['link'])
-        options['link'] = links
-      end
-
-      body = sendRequest(@urls['process'], options)
-
-      # i think the result is always a number (id) surrounded
-      # by too much whitespace
-      return body.strip
+      sendRequest(@urls['process'], process_process_options( table, options )).strip
     end
 
     # delete code
@@ -188,24 +172,38 @@ module DemocracyInAction
       return options
     end
 
+    def process_multiple_keys( options = {} )
+      # if multiple keys (array), join keys with comma
+      # (only for get command)
+      if options['key'] && (options['key'].class == Array) then
+        value = options['key'].join(', ')
+        options['key'] = value  
+      end
+      options
+
+    end
+
+    def process_process_options( table, options)
+      options = processOptions(table, options)
+      options['link'] = linkHashToQueryStringArray(options['link']) if options['link']
+      options
+    end
+
+    def process_get_options(table, options)
+      process_multiple_keys( processOptions( table, options ))
+    end
+
     # links are sent in a Hash.
     # every key is a table name
     # value is either key in that table, or Array of keys in that table
     # return an Array of values that can be added to a query string
     def linkHashToQueryStringArray(links)
-      if !links || !links.is_a?(Hash) then
-        raise(StandardError,"bad links value")
-      end
+      raise "bad links value" unless links && links.is_a?(Hash)
 
-      strings = Array.new
-      links.each do |table, key|
-        if key.class == Array then
-          key.each { |k| strings << table+'|'+k.to_s }
-        else
-          strings << table+'|'+key.to_s
-        end
-      end
-      return strings
+      links.inject([]) do |memo, (table, record_key)|
+        record_key = [ record_key ] unless record_key.is_a?( Array )
+        memo << record_key.map{ |k| table+'|'+k.to_s }
+      end.flatten
     end
 
     # helper function for sendRequest to handle multiple entries
@@ -214,24 +212,18 @@ module DemocracyInAction
       # in order to handle multiple links, keys...
       # if an option has an Array as value, append each array element
       # as "<key>=<array element>&"
-      tmp = Array.new
-      options.each do |k,v| 
-        if v.class == Array then
-          v.each { |vv| tmp << "#{urlencode(k.to_s)}=#{urlencode(vv.to_s)}" }
-        else
-          tmp << "#{urlencode(k.to_s)}=#{urlencode(v.to_s)}"
-        end
-      end
-      body = tmp.join('&')
+      options.inject([]) do |memo, (key, value)|
+        value = [ value ] unless value.is_a?( Array )
+        memo << value.map { |v| "#{urlencode(key.to_s)}=#{urlencode(v.to_s)}" }
+      end.join('&')
     end
 
-    @@disabled = false
     def self.disable!
       @@disabled = true
     end
 
     def self.disabled?
-      @@disabled 
+      @@disabled ||= false
     end
 
     # specialized code to handle multiple form entries with same key name
@@ -242,7 +234,7 @@ module DemocracyInAction
       # make a HTTP post and set the cookies
       url = URI.parse(my_url)
       req = Net::HTTP::Post.new(url.path)
-      @cookies.each { |c| req.add_field('Cookie', c) }
+      self.cookies.each { |c| req.add_field('Cookie', c) }
       
       # import authentication information
       options['organization_KEY'] = @orgKey if (@orgKey)
@@ -266,7 +258,7 @@ module DemocracyInAction
           # Good, now grab any cookies we can
           cookies = res.get_fields('Set-Cookie')
           if cookies
-            cookies.each { |c| @cookies.push(c.split(';')[0]) }
+            cookies.each { |c| self.cookies.push(c.split(';')[0]) }
           end
         when Net::HTTPRedirection
           # try to follow redirects, up to a maximum
