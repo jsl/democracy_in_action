@@ -215,13 +215,20 @@ module DemocracyInAction
       body = tmp.join('&')
     end
 
+    @@disabled = false
+    def self.disable!
+      @@disabled = true
+    end
+
+    def self.disabled?
+      @@disabled 
+    end
+
     # specialized code to handle multiple form entries with same key name
     # also does some error handling
     def sendRequest(my_url, options, redirects = 5)
-      unless defined?( DIA_ENABLED ) and DIA_ENABLED
-        return Net::HTTP.new( 'www.radicaldesigns.org', 80 ).start {|http| http.request( Net::HTTP::Get.new('/'))}
-      end
-            
+      return '' if API.disabled?
+
       # make a HTTP post and set the cookies
       url = URI.parse(my_url)
       req = Net::HTTP::Post.new(url.path)
