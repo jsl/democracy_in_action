@@ -19,7 +19,6 @@ module DemocracyInAction
         :delete  => 'http://org2.democracyinaction.org/dia/api/delete.jsp'
         }
       }
-    TABLES = [ :supporter, :groups ]
 
     attr_reader :username, :password, :orgkey, :domain
     attr_reader :urls
@@ -168,7 +167,7 @@ module DemocracyInAction
     def method_missing(*args)
       table_name = args.first
       
-      if TABLES.include?(table_name)
+      if Tables::TABLES.include?(table_name)
         return TableProxy.new(self, table_name)
       end
       super *args

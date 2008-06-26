@@ -8,6 +8,7 @@ require 'democracy_in_action/util'
 require 'democracy_in_action/config_rexml'
 require 'democracy_in_action/xml_parse'
 require 'democracy_in_action/desc_parse'
+require 'democracy_in_action/tables'
 require 'democracy_in_action/api'
 
 #legacy
