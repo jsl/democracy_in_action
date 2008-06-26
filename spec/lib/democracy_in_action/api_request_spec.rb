@@ -218,4 +218,23 @@ describe DemocracyInAction::API do
       end
     end
   end
+
+  describe "RESTful API methods" do
+    it "supports POST" do
+      @api.should_receive(:process)
+      @api.supporter.post
+    end
+    it "supports PUT" do
+      @api.should_receive(:process)
+      @api.supporter.post
+    end
+
+    describe "PUT" do
+      it "won't work unless a key is specified" do
+      end
+      it "will also work with supporter and email"
+      it "will also work with *_KEY"
+    end
+    
+  end
 end

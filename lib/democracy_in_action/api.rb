@@ -138,6 +138,16 @@ module DemocracyInAction
       send_request(@urls[:process], process_process_options( options[:table], options )).strip
     end
 
+	#create a new record
+	def post( options = {})
+	  process( options ) 
+	end
+
+	#update an existing record
+	def put( options = {} )
+	  process( options ) 
+	end
+
     # delete code
     # returns true if it works, false otherwise
     # takes an hash like {'key' => key}
