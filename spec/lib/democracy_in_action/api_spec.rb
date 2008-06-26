@@ -50,7 +50,7 @@ describe DemocracyInAction::API do
 
   it "gets data from DIA" do
     unless @api.connected?
-      @api.stub!(:sendRequest).and_return( fixture_file_read('supporter_by_limit_1.xml'))
+      @api.stub!(:send_request).and_return( fixture_file_read('supporter_by_limit_1.xml'))
     end
 
     result = @api.get('supporter', 'limit' => 1).first
@@ -76,7 +76,7 @@ describe DemocracyInAction::API do
 
   it "sends data to DIA for processing" do
     unless @api.connected?
-      @api.stub!(:sendRequest).and_return( fixture_file_read('process.xml'))
+      @api.stub!(:send_request).and_return( fixture_file_read('process.xml'))
     end
     result = @api.process 'supporter', :Email => 'test3@radicaldesigns.org'
     result.should match( /^\d+$/ )
@@ -108,30 +108,30 @@ describe DemocracyInAction::API do
     end
 
     it "responds to columns and returns the correct number" do
-      @api.stub!(:sendRequest).and_return(fixture_file_read('supporter_description.xml'))
+      @api.stub!(:send_request).and_return(fixture_file_read('supporter_description.xml'))
       @api.supporter.columns.size.should == 56
     end
     it "describe returns the same thing as columns" do
-      @api.stub!(:sendRequest).and_return(fixture_file_read('supporter_description.xml'))
+      @api.stub!(:send_request).and_return(fixture_file_read('supporter_description.xml'))
       @api.supporter.describe.size.should == 56
     end
 
     it "counts the records in the table" do
-      @api.stub!(:sendRequest).and_return(fixture_file_read('supporter_by_limit_1.xml'))
+      @api.stub!(:send_request).and_return(fixture_file_read('supporter_by_limit_1.xml'))
       @api.supporter.count.should == 11466 
     end
   end
 
   describe "count method" do
     it "counts the records in the table" do
-      @api.stub!(:sendRequest).and_return(fixture_file_read('supporter_by_limit_1.xml'))
+      @api.stub!(:send_request).and_return(fixture_file_read('supporter_by_limit_1.xml'))
       @api.count(:table => 'supporter').should == 11466 
     end
   end
 
   describe "columns method" do
     it "should return a description of the given table" do
-      @api.stub!(:sendRequest).and_return(fixture_file_read('supporter_description.xml'))
+      @api.stub!(:send_request).and_return(fixture_file_read('supporter_description.xml'))
       @api.columns(:table => 'supporter').size.should == 56
     end
   end

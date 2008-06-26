@@ -6,17 +6,17 @@ describe DemocracyInAction::API do
     #Net::HTTP::Post.stub!(:new).and_return(stub_everything)
   end
 
-  describe "buildBody" do
+  describe "build_body" do
     it "should convert key value pair into string" do
-      body = @api.send(:buildBody, {"key" => "123456"})
+      body = @api.send(:build_body, {"key" => "123456"})
       body.should == "key=123456"
     end
     it "should convert multiple key value pairs into string" do
-      body = @api.send(:buildBody, {"key" => "123456", "email" => "test@domain.org"})
+      body = @api.send(:build_body, {"key" => "123456", "email" => "test@domain.org"})
       body.should == "key=123456&email=test%40domain.org"
     end
     it "should convert key value pairs that contain arrays into string" do
-      body = @api.send(:buildBody, {"key" => "123456", "names" => ["austin", "patrice", "seth"]})
+      body = @api.send(:build_body, {"key" => "123456", "names" => ["austin", "patrice", "seth"]})
       body.should == "names=austin&names=patrice&names=seth&key=123456"
     end
   end
@@ -45,22 +45,27 @@ describe DemocracyInAction::API do
     it "should have cookies" do
       @api.cookies.should be_an_instance_of(Array)
     end
+    it "accepts and keeps cookies" do
+      @api.cookies << 'blah'
+      @api.cookies << 'blah' 
+      @api.cookies.size.should == 2
+    end
   end
 
   describe "get" do
 
-    describe "processOptions" do
+    describe "process_options" do
       it "returns a hash when passed a nil value" do
-        @api.send(:processOptions, "test", nil).should be_an_instance_of(Hash)
+        @api.send(:process_options, "test", nil).should be_an_instance_of(Hash)
       end
       it "returns a hash with key 'key' when passed a single key" do
-        @api.send(:processOptions, "test", 5)['key'].should == 5
+        @api.send(:process_options, "test", 5)['key'].should == 5
       end
       it "always adds the table value to the hash" do
-        @api.send(:processOptions, "test", nil)['table'].should == 'test'
+        @api.send(:process_options, "test", nil)['table'].should == 'test'
       end
       it "always specifies the request is simple, so as to receive an xml response" do
-        @api.send(:processOptions, "test", nil)['simple'].should == true
+        @api.send(:process_options, "test", nil)['simple'].should == true
       end
     end
 
@@ -112,8 +117,89 @@ describe DemocracyInAction::API do
     end
     describe "process_process_options" do
       it "should call process options to process the options" do
-        @api.should_receive(:processOptions).with('supporter', {"hello" => "i love you"}).and_return({})
+        @api.should_receive(:process_options).with('supporter', {"hello" => "i love you"}).and_return({})
         @api.send(:process_process_options, 'supporter', {"hello" => "i love you"})
+      end
+    end
+  end
+
+  describe "send Request" do
+    describe "build request" do
+      it "returns a POST" do
+        @api.send(:build_request, URI.parse(@api.urls[:get]), {}).should be_an_instance_of(Net::HTTP::Post)
+        
+      end
+      it "imports the authentication to the options" do
+        @api.should_receive(:build_body).with(hash_including('user'=>api_arguments[:username],'password' => api_arguments[:password] ))
+        @api.send(:build_request, URI.parse(@api.urls[:get]), {})
+      end
+
+      describe "modifications" do
+        before do
+          @req = Net::HTTP::Post.new(URI.parse(@api.urls[:get]).path)
+          Net::HTTP::Post.stub!(:new).and_return(@req)
+        end
+        it "appends the cookies" do
+          @api.instance_variable_set( :@cookies, [ 'blah', 'blah' ] )
+          @req.should_receive(:add_field).with("Cookie", 'blah').exactly(2).times
+          @api.send(:build_request, URI.parse(@api.urls[:get]), {})
+        end
+        it "appends passed options into the body" do
+          @api.should_receive(:build_body).with(hash_including(:joe =>'smokey',:ronah => 'delightful'))
+          @api.send(:build_request, URI.parse(@api.urls[:get]), { :joe => 'smokey', :ronah => 'delightful' })
+        end
+        it "sets the content-type" do
+          @req.should_receive(:set_content_type).with('application/x-www-form-urlencoded')
+          @api.send(:build_request, URI.parse(@api.urls[:get]), {})
+        end
+      end
+    end
+
+    describe "request and resolution" do
+      describe "the actual request" do
+        before do
+          @net_req = stub( 'request', :start => true, :error! => true, :body => true )
+          Net::HTTP.stub!(:new).and_return( @net_req )
+        end
+        it "is sent" do
+          @net_req.should_receive(:start).and_return( @net_req )
+          @api.send(:send_request, @api.urls[:get], {})
+        end
+        it "is resolved" do
+          @net_req.stub!(:start).and_return(@net_req)
+          @api.should_receive(:resolve).with(@net_req).and_return( @net_req )
+          @api.send(:send_request, @api.urls[:get], {})
+        end
+      end
+
+      describe "resolution" do
+        it "calls error on the response unless the response is a success" do
+          req = nil
+          req.should_receive(:error!)
+          @api.send :resolve, req 
+        end
+
+
+        describe "response is a success" do
+          before do
+            @req = stub( 'response', :get_fields => false )
+            @req.stub!(:is_a?).with(Net::HTTPSuccess).and_return(true)
+          end
+
+          it "does not call error on a success" do
+            @req.should_not_receive(:error!)
+            @api.send :resolve, @req 
+          end
+
+          it "extracts cookies from the response" do
+            @req.stub!(:get_fields).and_return([ 'blah', 'blue', 'blunder' ] )
+            @api.send :resolve, @req 
+            @api.cookies.should == [ 'blah', 'blue', 'blunder' ]
+          end
+          it "returns the first argument" do
+            @api.send( :resolve, @req  ).should == @req
+          end
+        end
       end
     end
   end
