@@ -1,11 +1,11 @@
 require 'rexml/document'
 require 'rexml/streamlistener'
 
-include REXML
+#include REXML
 
 module DemocracyInAction
   # first, a little helper class to hold a field
-  class FieldDesc
+  class FieldDesc #:nodoc:
     attr_accessor :field, :type, :null, :key, :default, :extra
 
     # takes a Hash input
@@ -21,8 +21,8 @@ module DemocracyInAction
 
   # a parser just for the table descriptions
   # call result() to get an Array of FieldDesc
-  class DIA_Desc_Listener
-    include StreamListener
+  class DIA_Desc_Listener #:nodoc:
+    include REXML::StreamListener
 
     def initialize
       @fields = Array.new

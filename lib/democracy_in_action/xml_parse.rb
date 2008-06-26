@@ -1,7 +1,7 @@
 require 'rexml/streamlistener'
 #require 'rexml/document'
 
-include REXML
+#include REXML
 
 # this parses out items of name/value pairs well, for example in
 # get...() code.  it doesn't work on descibe() results at all :(
@@ -11,8 +11,8 @@ include REXML
 #   count - the number of database rows that would be returned
 #   type - the data type name in the xml (eg. 'event', 'groups', 'supporter')
 module DemocracyInAction
-  class DIA_Get_Listener
-    include StreamListener
+  class DIA_Get_Listener #:nodoc:
+    include REXML::StreamListener
 
     attr_reader :items, :count, :type
 
@@ -71,7 +71,7 @@ end
 
 =begin
 listener = DIAListener.new
-parser = Parsers::StreamParser.new(File.new(NAME), listener)
+parser = REXML::Parsers::StreamParser.new(File.new(NAME), listener)
 parser.parse
 puts "Result-----"
 puts listener.parsed.each { |x| puts x.inspect }

@@ -43,12 +43,12 @@ describe DemocracyInAction::API do
 
   describe "cookies" do
     it "should have cookies" do
-      @api.cookies.should be_an_instance_of(Array)
+      @api.send(:cookies).should be_an_instance_of(Array)
     end
     it "accepts and keeps cookies" do
-      @api.cookies << 'blah'
-      @api.cookies << 'blah' 
-      @api.cookies.size.should == 2
+      @api.send(:cookies).<< 'blah'
+      @api.send(:cookies).<< 'blah' 
+      @api.send(:cookies).size.should == 2
     end
   end
 
@@ -212,7 +212,7 @@ describe DemocracyInAction::API do
           it "extracts cookies from the response" do
             @req.stub!(:get_fields).and_return([ 'blah', 'blue', 'blunder' ] )
             @api.send :resolve, @req 
-            @api.cookies.should == [ 'blah', 'blue', 'blunder' ]
+            @api.send(:cookies).should == [ 'blah', 'blue', 'blunder' ]
           end
           it "returns the first argument" do
             @api.send( :resolve, @req  ).should == @req
