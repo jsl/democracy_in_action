@@ -1,5 +1,5 @@
 module DemocracyInAction
-  module Util
+  module Util #:nodoc:
     ################# CONVENIENCE FUNCTIONS #####################
     
     ########  GET INFORMATION ##############

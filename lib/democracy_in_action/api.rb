@@ -25,6 +25,8 @@ module DemocracyInAction
     #include DemocracyInAction::Util
     class InvalidKey < ArgumentError #:nodoc:
     end
+    class NoTableSpecified < ArgumentError #:nodoc:
+    end
     class ConnectionInvalid < ArgumentError #:nodoc:
     end
 
@@ -56,11 +58,14 @@ module DemocracyInAction
     attr_reader :username, :password, :orgkey, :node
     attr_reader :urls
 
-    # requires an options hash containing:
+    # Requires an options hash containing:
+    #
     # :username, :password, :orgkey, and :node
-    #   :node may be omitted if the user specifies a custom service node with a :urls hash
-    # the urls hash should be in the form:
-    #   :urls => { :get => get_url, :process => process_url, :delete => delete_url }
+    #   
+    # You can omit :node if you specify a custom service node with a :urls hash.
+    #
+    # If a :urls hash is used, it should have the form:
+    #   :urls => { :get => "get_url", :process => "process_url", :delete => "delete_url" }
     def initialize(options = {})
       unless options && options[:username] && options[:password] && options[:orgkey] && ( options[:node] || options[:urls] ) || self.class.disabled?
         raise ConnectionInvalid.new("Must specify :username, :password, :orgkey, and ( :node or :url )")
@@ -82,6 +87,16 @@ module DemocracyInAction
       rescue SocketError #means the library cannot reach the DIA server at all, or no internet is available
         false
       end
+    end
+
+    # Prevent the API from contacting any Democracy In Action node.  Used for development and testing purposes.
+    def self.disable!
+      @@disabled = true
+    end
+
+    # Determine whether the API is allowed to contact remote nodes.
+    def self.disabled?
+      @@disabled ||= false
     end
 
     def authenticate
@@ -130,28 +145,16 @@ module DemocracyInAction
     #
     #           String:  same as { 'key' => String }
     def get(options = {})
-      # make a HTTP post
-      body = send_request(@urls[:get], process_get_options(options[:table], options))
-
-      # interpret the results...
-      # the description is a different format and needs a different parser
-      return nil if parse_error(body)
-      return parse_description( body ) if (options['desc'])
-      return parse_count( body ) if (options['count'])
-
-      parse_records( body )
+      body = send_request(@urls[:get], process_get_options(options))
+      parse_records( body ) unless has_error?( body )
     end
 
-    def parse_error(xml)
+    def has_error?(xml)
       xml =~ /<error>Invalid login/
     end
 
-    def parse_count(xml)  
-      parse(xml).count
-    end
-    
-    def parse(xml)
-      listener = DIA_Get_Listener.new
+    def parse(xml, listener_class = DIA_Get_Listener )
+      listener = listener_class.new
       parser = REXML::Parsers::StreamParser.new(xml, listener)
       parser.parse
       listener
@@ -162,10 +165,7 @@ module DemocracyInAction
     end
 
     def parse_description(xml)
-      listener = DIA_Desc_Listener.new
-      parser = REXML::Parsers::StreamParser.new(xml, listener)
-      parser.parse
-      listener.result
+      parse( xml, DIA_Desc_Listener ).result
     end
 
     # options - Hash keys: 'key', 'debug' <br>
@@ -173,7 +173,7 @@ module DemocracyInAction
     #           String: same as { 'key' => String }
     # TODO: document link option???
     def process(options = nil)
-      send_request(@urls[:process], process_process_options( options[:table], options )).strip
+      send_request(@urls[:process], process_process_options( options )).strip
     end
 
   #create a new record
@@ -198,8 +198,8 @@ module DemocracyInAction
     # 
     #            if String, same as { 'key' => String }
     def delete(criteria)
-      table = criteria.delete('table') || criteria.delete(:table)
-      options = process_options(table, criteria)
+      #table = criteria.delete('table') || criteria.delete(:table)
+      options = process_options(criteria)
       options.delete('simple')
       options['xml'] = true
 
@@ -214,24 +214,28 @@ module DemocracyInAction
       end
     end
 
-    def columns(options)
-      #raise (self.class.instance_methods - Object.instance_methods).inspect
-      get('table' => options[:table], 'desc' => true)
+    # Return a description of the columns for a given table
+    # the response is a Hash of Result objects, with field names as keys 
+    # the fields are described with the keys :field, :type, :null, :key, :default, and :extra
+    # not all keys are specified for all fields
+    # 
+    # Requires a :table
+    def columns(options = {}) #:nodoc:
+      body = send_request(@urls[:get], process_get_options(options.merge( 'desc' => true )))
+      parse_description( body ) unless has_error?(body)
     end
     alias :describe :columns
 
-    def count(options)
-      get('table' => options[:table], 'count' => true, 'limit' => 1)
+    # Returns an integer for the number of records specified.
+    #
+    # Requires a :table and allows a :where to restrict the result set.
+    def count(options = {})
+      #get(options.merge('count' => true, 'limit' => 1))
+      options[:limit] = 1
+      xml = send_request(@urls[:get], process_get_options(options))
+      parse(xml).count unless has_error?(xml)
     end
     
-    def self.disable!
-      @@disabled = true
-    end
-
-    def self.disabled?
-      @@disabled ||= false
-    end
-
 
     ###################### INTERNAL CODE ###################
 
@@ -254,17 +258,17 @@ module DemocracyInAction
 
     # this takes the table name and (possibly nil) options
     # and returns one hash with them all, handling key processing
-    def process_options(table, options)
+    def process_options(options)
       # handle no options as well as String representing the key value
       if (! options) then 
         options = { }
       elsif (options.class != Hash)
-        options = { 'key' => options }
+        options = { :key => options }
       end
 
       # default options
-      options['table'] = table
-      options['simple'] = true
+      # options[:table] = table
+      options[:simple] = true
 
       return options
     end
@@ -280,14 +284,14 @@ module DemocracyInAction
 
     end
 
-    def process_process_options( table, options)
-      options = process_options(table, options)
+    def process_process_options(options={})
+      options = process_options(options)
       options['link'] = linkHashToQueryStringArray(options['link']) if options['link']
       options
     end
 
-    def process_get_options(table, options)
-      process_multiple_keys( process_conditions( process_options( table, options )))
+    def process_get_options(options={})
+      process_multiple_keys( process_conditions( process_options( options )))
     end
 
     def process_conditions( options = {} )
@@ -344,6 +348,7 @@ module DemocracyInAction
     # specialized code to handle multiple form entries with same key name
     # also does some error handling
     def send_request(base_url, options)
+      raise NoTableSpecified.new("You must either include :table in the options hash or use the proxy methods API#[tablename].get") unless options[:table]
       return '' if API.disabled?
 
       url = URI.parse(base_url) 
