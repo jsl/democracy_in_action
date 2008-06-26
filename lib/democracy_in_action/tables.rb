@@ -155,5 +155,9 @@ module DemocracyInAction
       :workflow_instance_task,
       :workflow_task
     ]
+    # returns a list of valid tables for Democracy in Action
+    def self.list
+      TABLES
+    end
   end
 end

@@ -1,6 +1,32 @@
 module DemocracyInAction
+
+  # There are a lot of functions that take the same variable names..
+  # Here is a description of common arguments
+  #   table - SQL table name (String)
+  #   options - SQL options (Hash) (ex. {"limit" => 4} )
+  #       (sometimes it takes one value with assumed name,
+  #        read individual functions for more info)
+  #   data - SQL column names/values to insert (Hash)
+  #           (ex.  {'key' => key, 'First_Name' => name } )
+  #   criteria - SQL column names/values for WHERE clause (HASH)
+  #         (ex. {'Email' => email} mean "WHERE Email == email" )
+  # More details on individual functions
+  #
+  # API notes:  there are some bug(?) in the DIA side...
+  #   1. only characters accepted in where clause [0-9a-zA-Z_ .'"<>!=%+&@-]
+  #      therefore, don't put others (like ,) in names or you can't search
+  #   2. you cannot search the supporter_groups links by groups_KEY
+  #   3. you can link supporters to invalid group keys (and visa versa)
+  #   4. when you delete a group, the links in supporter_groups are not erased
+  #      (but if you delete a suporter, they are)
+  #      i think this discrepancy has to do with (2)
+  
   class API
     #include DemocracyInAction::Util
+    class InvalidKey < ArgumentError #:nodoc:
+    end
+    class ConnectionInvalid < ArgumentError #:nodoc:
+    end
 
     DOMAINS = { 
       :sandbox => {
@@ -30,9 +56,11 @@ module DemocracyInAction
     attr_reader :username, :password, :orgkey, :domain
     attr_reader :urls
 
-    # options...  (default: above urls, no auth)
-    # :username => user, :password => pass, :orgkey => org
-    # urls => { 'get' => get_url, 'process'..., 'delete'..., 'unsub'... }
+    # requires an options hash containing:
+    # :username, :password, :orgkey, and :domain
+    #   :domain may be omitted if the user specifies a custom service node with a :urls hash
+    # the urls hash should be in the form:
+    #   :urls => { :get => get_url, :process => process_url, :delete => delete_url }
     def initialize(options = {})
       unless options && options[:username] && options[:password] && options[:orgkey] && ( options[:domain] || options[:urls] ) || self.class.disabled?
         raise ConnectionInvalid.new("Must specify :username, :password, :orgkey, and ( :domain or :url )")
@@ -46,10 +74,8 @@ module DemocracyInAction
       raise ConnectionInvalid.new("Urls must include at least :get, :process, and :delete") unless @urls[:get] and @urls[:process] and @urls[:delete]
     end
 
-    def cookies
-      @cookies ||= []
-    end
-
+  # confirms that the API is enabled and the Democracy in Action service node is reachable
+  # returns a boolean
     def connected?
       begin
         API.disabled? || !(@username && @password && @orgkey && @domain && get( :table => 'supporter', 'desc' => 1 )).nil?
@@ -93,26 +119,6 @@ module DemocracyInAction
       response = https.get(url.request_uri, 'Cookie' => cookies.join(';')) #can also use Net::HTTP::Get
     end
 
-    # There are a lot of functions that take the same variable names..
-    # Here is a description of common arguments
-    #   table - SQL table name (String)
-    #   options - SQL options (Hash) (ex. {"limit" => 4} )
-    #       (sometimes it takes one value with assumed name,
-    #        read individual functions for more info)
-    #   data - SQL column names/values to insert (Hash)
-    #           (ex.  {'key' => key, 'First_Name' => name } )
-    #   criteria - SQL column names/values for WHERE clause (HASH)
-    #         (ex. {'Email' => email} mean "WHERE Email == email" )
-    # More details on individual functions
-    #
-    # API notes:  there are some bug(?) in the DIA side...
-    #   1. only characters accepted in where clause [0-9a-zA-Z_ .'"<>!=%+&@-]
-    #      therefore, don't put others (like ,) in names or you can't search
-    #   2. you cannot search the supporter_groups links by groups_KEY
-    #   3. you can link supporters to invalid group keys (and visa versa)
-    #   4. when you delete a group, the links in supporter_groups are not erased
-    #      (but if you delete a suporter, they are)
-    #      i think this discrepancy has to do with (2)
 
 
     # gets an "XML" document with the table info
@@ -146,7 +152,7 @@ module DemocracyInAction
     
     def parse(xml)
       listener = DIA_Get_Listener.new
-      parser = Parsers::StreamParser.new(xml, listener)
+      parser = REXML::Parsers::StreamParser.new(xml, listener)
       parser.parse
       listener
     end
@@ -157,7 +163,7 @@ module DemocracyInAction
 
     def parse_description(xml)
       listener = DIA_Desc_Listener.new
-      parser = Parsers::StreamParser.new(xml, listener)
+      parser = REXML::Parsers::StreamParser.new(xml, listener)
       parser.parse
       listener.result
     end
@@ -170,18 +176,18 @@ module DemocracyInAction
       send_request(@urls[:process], process_process_options( options[:table], options )).strip
     end
 
-	#create a new record
-	def post( options = {})
-	  process( options ) 
-	end
+  #create a new record
+  def post( options = {})
+    process( options ) 
+  end
 
-	#update an existing record
-	def put( options = {} )
+  #update an existing record
+  def put( options = {} )
     required_keys = [ :key, 'key', options[:table] + '_KEY', ( options[:table] + '_KEY').to_sym ]
     required_keys += [ 'Email', :Email ] if options[:table] == 'supporter' || options[:table] == :supporter
     raise InvalidKey.new( "You must specify :key, :Email, or #{options[:table]}_KEY to update a record" ) unless options.any? { |optkey, value| required_keys.include?(optkey) }
-	  process( options ) 
-	end
+    process( options ) 
+  end
 
     # delete code
     # returns true if it works, false otherwise
@@ -231,15 +237,16 @@ module DemocracyInAction
 
     protected
 
-    def method_missing(*args)
+    def method_missing(*args) #:nodoc:
       table_name = args.first
       
-      if Tables::TABLES.include?(table_name)
+      if Tables.list.include?(table_name)
         return TableProxy.new(self, table_name)
       end
       super *args
     end
 
+    # encodes values for transmission in a POST
     # copied from private function in Net::HTTP
     def urlencode(str)
       str.gsub(/[^a-zA-Z0-9_\.\-]/n) {|s| sprintf('%%%02x', s[0]) }
@@ -362,11 +369,18 @@ module DemocracyInAction
       response
     end
 
-    class InvalidKey < ArgumentError; end
+    # returns any cookies received back from the DIA service
+    def cookies
+      @cookies ||= []
+    end
+
   end
 
-  class ConnectionInvalid < ArgumentError; end
-  class TableProxy
+  # This class acts as a placeholder for DIA tables.  It automatically includes
+  # :table => [table_name] in the options hash that is passed along to the API.
+  #
+  # All methods not listed in TABLE_PROXY_METHODS are passed along to the API with their original arguments.
+  class TableProxy #:nodoc:
     TABLE_PROXY_METHODS = [:get, :process, :delete, :columns, :describe, :count, :put, :post ]
     TABLE_PROXY_METHODS.each { |method| undef_method( method ) if instance_methods.include?( method.to_s ) }
 
@@ -374,6 +388,8 @@ module DemocracyInAction
       @api = api
       @table_name = table_name
     end
+
+    private
 
     def method_missing(*args)
       start_args = args.dup

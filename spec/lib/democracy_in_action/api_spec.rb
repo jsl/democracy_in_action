@@ -170,10 +170,10 @@ describe DemocracyInAction::API do
         @args.delete(:domain)
       end
       it "raises an error if the urls are bad" do
-        lambda {DemocracyInAction::API.new( @args.merge({ :urls => { :joe => 'bears' }}) ) }.should raise_error( DemocracyInAction::ConnectionInvalid )
+        lambda {DemocracyInAction::API.new( @args.merge({ :urls => { :joe => 'bears' }}) ) }.should raise_error( DemocracyInAction::API::ConnectionInvalid )
       end
       it "raises no error if all required urls are given" do
-        lambda {DemocracyInAction::API.new( @args.merge({ :urls => { :get => 'cares', :process => 'bears', :delete => 'cubs' }}) ) }.should_not raise_error( DemocracyInAction::ConnectionInvalid )
+        lambda {DemocracyInAction::API.new( @args.merge({ :urls => { :get => 'cares', :process => 'bears', :delete => 'cubs' }}) ) }.should_not raise_error( DemocracyInAction::API::ConnectionInvalid )
       end
     end
 
