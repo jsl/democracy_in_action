@@ -94,11 +94,14 @@ describe DemocracyInAction::API do
         @api.send(:process_get_options, 'test', nil ).keys.should include( 'simple' )
       end
       describe "a :where parameter with a hash" do
+
         it "should convert to an 'AND' delimited string" do
-          @api.send(:process_get_options, 'test', { :where => { :Email => 'joe@example.com', :Last_Name => 'Biden' }})[:where].should == "Last_Name = 'Biden' AND Email = 'joe@example.com'"
+          @api.send(:process_get_options, 'test', { :where => { :Email => 'joe@example.com', :Last_Name => 'Biden' }})[:where].should match(/Last_Name = 'Biden' AND Email = 'joe@example.com'|Email = 'joe@example.com' AND Last_Name = 'Biden'/)
         end
+
         it "should escape values with single quotes in them" do
-          @api.send(:process_get_options, 'test', { :where => { :Email => 'joe@example.com', :Last_Name => "Bi'den" }})[:where].should == "Last_Name = 'Bi\\'den' AND Email = 'joe@example.com'"
+          #@api.send(:process_get_options, 'test', { :where => { :Email => 'joe@example.com', :Last_Name => "Bi'den" }})[:where].should == "Last_Name = 'Bi\\'den' AND Email = 'joe@example.com'"
+          @api.send(:process_get_options, 'test', { :where => { :Email => 'joe@example.com', :Last_Name => "Bi'den" }})[:where].should match(/Last_Name = 'Bi\\\'den' AND Email = 'joe@example.com'|Email = 'joe@example.com' AND Last_Name = 'Bi\\\'den'/)
         end
       end
       describe "a :where parameter with a string" do
@@ -226,14 +229,20 @@ describe DemocracyInAction::API do
     end
     it "supports PUT" do
       @api.should_receive(:process)
-      @api.supporter.post
+      @api.supporter.put :key => 'test'
     end
 
     describe "PUT" do
       it "won't work unless a key is specified" do
+	      lambda{@api.supporter.put}.should raise_error( DemocracyInAction::API::InvalidKey )
       end
-      it "will also work with supporter and email"
-      it "will also work with *_KEY"
+      it "will also work with supporter and email" do
+	      lambda{@api.supporter.put :Email => 1 }.should_not raise_error( DemocracyInAction::API::InvalidKey )
+      end
+
+      it "will also work with *_KEY" do
+	      lambda{@api.supporter.put :supporter_KEY => 1 }.should_not raise_error( DemocracyInAction::API::InvalidKey )
+      end
     end
     
   end
