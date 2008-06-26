@@ -4,9 +4,10 @@ module DemocracyInAction
 
     DOMAINS = { 
       :salsa => { 
+        :login   => 'https://salsa.democracyinaction.org/dia/hq/processLogin.jsp',
         :get     => 'http://salsa.democracyinaction.org/dia/api/get.jsp',
         :process => 'http://salsa.democracyinaction.org/dia/api/process.jsp',
-        :delete  => 'http://salsa.democracyinaction.org/dia/api/delete.jsp'
+        :delete  => 'http://salsa.democracyinaction.org/dia/deleteEntry.jsp'
         },
       :wiredforchange => { 
         :get     => 'http://salsa.wiredforchange.com/dia/api/get.jsp',
@@ -45,7 +46,19 @@ module DemocracyInAction
 
     def connected?
       #!(@username && @password && @orgkey && @domain ).nil?
-      API.disabled? || !(@username && @password && @orgkey && @domain && get( 'supporter', 'desc' => 1 )).nil?
+      API.disabled? || !(@username && @password && @orgkey && @domain && get( :table => 'supporter', 'desc' => 1 )).nil?
+    end
+
+    def login
+  #    puts "logging in" if $DEBUG
+      url = URI.parse(@urls[:login])
+      http = Net::HTTP.new(url.host, url.port)
+      http.use_ssl = true
+      res = http.post(url.path, "email=#{username}&password=#{password}")
+
+      if res['set-cookie']
+        res['set-cookie'].each { |c| cookies.push(c.split(';')[0]) }
+      end
     end
 
     # There are a lot of functions that take the same variable names..
@@ -78,9 +91,9 @@ module DemocracyInAction
     # options - Hash keys: 'key', 'column', 'order', 'limit', 'where', 'desc' 
     #
     #           String:  same as { 'key' => String }
-    def get(table, options = nil)
+    def get(options = {})
       # make a HTTP post
-      body = send_request(@urls[:get], process_get_options(table, options))
+      body = send_request(@urls[:get], process_get_options(options[:table], options))
 
       # interpret the results...
       # the description is a different format and needs a different parser
@@ -121,8 +134,8 @@ module DemocracyInAction
     #
     #           String: same as { 'key' => String }
     # TODO: document link option???
-    def process(table, options = nil)
-      send_request(@urls[:process], process_process_options( table, options )).strip
+    def process(options = nil)
+      send_request(@urls[:process], process_process_options( options[:table], options )).strip
     end
 
     # delete code
@@ -133,7 +146,8 @@ module DemocracyInAction
     # criteria - any value column/values pair on the table (as Hash) 
     # 
     #            if String, same as { 'key' => String }
-    def delete(table, criteria)
+    def delete(criteria)
+      table = criteria.delete('table') || criteria.delete(:table)
       options = process_options(table, criteria)
       options.delete('simple')
       options['xml'] = true
@@ -151,12 +165,12 @@ module DemocracyInAction
 
     def columns(options)
       #raise (self.class.instance_methods - Object.instance_methods).inspect
-      get(options[:table], 'desc' => true)
+      get('table' => options[:table], 'desc' => true)
     end
     alias :describe :columns
 
     def count(options)
-      get(options[:table], 'count' => true, 'limit' => 1)
+      get('table' => options[:table], 'count' => true, 'limit' => 1)
     end
     
     def self.disable!
@@ -259,7 +273,7 @@ module DemocracyInAction
     def build_request(url, options)
       # make a HTTP post and set the cookies
       request = Net::HTTP::Post.new(url.path)
-      self.cookies.each { |c| request.add_field('Cookie', c) }
+      cookies.each { |c| request.add_field('Cookie', c) }
       
       # import authentication information
       options['organization_KEY'] = @orgkey if (@orgkey)
@@ -297,8 +311,8 @@ module DemocracyInAction
       return ( response.error! and response ) unless response.is_a?( Net::HTTPSuccess )
 
       # Good, now grab any cookies we can
-      if cookies = response.get_fields('Set-Cookie')
-        cookies.each { |c| self.cookies.push(c.split(';')[0]) }
+      if response.get_fields('Set-Cookie')
+        response.get_fields('Set-Cookie').each { |c| self.cookies.push(c.split(';')[0]) }
       end
       response
     end

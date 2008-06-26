@@ -1,7 +1,7 @@
 $:.unshift(File.dirname(__FILE__)) unless
   $:.include?(File.dirname(__FILE__)) || $:.include?(File.expand_path(File.dirname(__FILE__)))
 
-%w(net/http).each { |f| require f }
+%w(net/http net/https).each { |f| require f }
 
 require 'democracy_in_action/version'
 require 'democracy_in_action/util'

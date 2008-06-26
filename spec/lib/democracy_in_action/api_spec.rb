@@ -53,7 +53,7 @@ describe DemocracyInAction::API do
       @api.stub!(:send_request).and_return( fixture_file_read('supporter_by_limit_1.xml'))
     end
 
-    result = @api.get('supporter', 'limit' => 1).first
+    result = @api.get(:table => 'supporter', 'limit' => 1).first
     result['key'].should match( /^\d+$/ )
     result['Email'].should_not be_nil
   end
@@ -61,7 +61,7 @@ describe DemocracyInAction::API do
   describe "the results returned from get" do
     before do
       @api.stub!(:send_request).and_return( fixture_file_read('supporter_by_limit_1.xml'))
-      @result = @api.get('supporter', 'limit' => 1).first
+      @result = @api.get('table' => 'supporter', 'limit' => 1).first
     end
     it "should have hash like access" do
       @result['First_Name'].should == 'test1'
@@ -78,7 +78,7 @@ describe DemocracyInAction::API do
     unless @api.connected?
       @api.stub!(:send_request).and_return( fixture_file_read('process.xml'))
     end
-    result = @api.process 'supporter', :Email => 'test3@radicaldesigns.org'
+    result = @api.process 'table' => 'supporter', :Email => 'test3@radicaldesigns.org'
     result.should match( /^\d+$/ )
   end
 
