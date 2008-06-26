@@ -14,7 +14,7 @@
   <MI></MI>
   <Last_Name>Cohen</Last_Name>
   <Suffix></Suffix>
-  <Email>mark.cohen@case.edu</Email>
+  <Email>email@email.com</Email>
   <Password></Password>
   <Receive_Email>1</Receive_Email>
   <Email_Status></Email_Status>
@@ -23,20 +23,20 @@
   <Hard_Bounce_Count></Hard_Bounce_Count>
   <Last_Bounce></Last_Bounce>
   <Receive_Phone_Blasts></Receive_Phone_Blasts>
-  <Phone>216-844-8928</Phone>
+  <Phone>123-345-8928</Phone>
   <Cell_Phone></Cell_Phone>
   <Phone_Provider></Phone_Provider>
   <Work_Phone></Work_Phone>
   <Pager></Pager>
   <Home_Fax></Home_Fax>
   <Work_Fax></Work_Fax>
-  <Street>6228 Coldstream Road</Street>
+  <Street></Street>
   <Street_2></Street_2>
   <Street_3></Street_3>
-  <City>Highland Heights</City>
-  <State>OH</State>
-  <Zip>44143</Zip>
-  <PRIVATE_Zip_Plus_4>3702</PRIVATE_Zip_Plus_4>
+  <City></City>
+  <State></State>
+  <Zip></Zip>
+  <PRIVATE_Zip_Plus_4></PRIVATE_Zip_Plus_4>
   <County></County>
   <District></District>
   <Country></Country>

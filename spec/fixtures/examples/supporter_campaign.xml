@@ -17,43 +17,13 @@
   <Current_Status>Done</Current_Status>
   <Letter_Subject>StepItUp</Letter_Subject>
   <Letter_Salutation></Letter_Salutation>
-  <Letter_Content>&lt;p&gt;I'm writing to ask that you take the time on Saturday,
-November 3 to attend an event in san francisco, CA 
-and tell us how you plan to lead in the fight against global warming.&lt;/p&gt;
-
-&lt;p&gt;This event will be one of hundreds scheduled all across
-America on the same day, many of them in places that honor great leaders
-of the American pastâ€”from the top of Mt. Washington to the birthplace of
-Rachel Carson to the site of the Lincoln Douglas debates. We think we
-need not just political rhetoric on this question, but real leadership,
-of the kind that America has always produced when the chips are down.&lt;/p&gt;
-
-&lt;p&gt;We're part of an emerging coalition of climate activists
-across the country that have come together to support three positions:
-80% cuts in carbon emissions by 2050, a moratorium on new coal-fired
-power plants, and a Green Jobs Corps to start transforming American
-homes and businesses. We'd love to hear your reaction to those ideasâ€”do
-they go too far? Not far enough? But more importantly we want to hear
-&lt;emphasis&gt;your plans for leadership.&lt;/emphasis&gt;
-
-&lt;p&gt;We know this event falls during the planned Congressional
-recess and that your schedule is very busy. You don't need to prepare a
-lengthy orationâ€”don't worry about convincing us that global warming is a
-problem. (We already know.) Please just take a few minutes to tell us
-how you plan to lead. We'll be taking video of the speakers so we can
-share it via the web across the state and the countryâ€”hopefully by day's
-end on Nov. 3 we'll know how most of America's politicians think about
-this issue, and which ones are ready to be more than politicians. It
-should be an exciting day.&lt;/p&gt;
-
-&lt;p&gt;Please respond to seth walker to set up details for 
-your participation. We look forward to seeing you on November 3.&lt;/p&gt;</Letter_Content>
+  <Letter_Content>test</Letter_Content>
   <Action_Source></Action_Source>
   <Title></Title>
-  <First_Name>seth</First_Name>
-  <Last_Name>walker</Last_Name>
-  <Email>seth@radicaldesigns.org</Email>
-  <Street>1370 mission st</Street>
+  <First_Name>test</First_Name>
+  <Last_Name></Last_Name>
+  <Email></Email>
+  <Street>street</Street>
   <Street_2></Street_2>
   <City>san francisco</City>
   <State>CA</State>
@@ -77,12 +47,12 @@ your participation. We look forward to seeing you on November 3.&lt;/p&gt;</Lett
   <Last_Modified>2008-04-07 19:29:05.0</Last_Modified>
   <Date_Created>2007-08-02 15:42:04.0</Date_Created>
   <Title></Title>
-  <First_Name>sethmeister</First_Name>
+  <First_Name>test</First_Name>
   <MI></MI>
-  <Last_Name>walker</Last_Name>
+  <Last_Name>test</Last_Name>
   <Suffix></Suffix>
-  <Email>seth@radicaldesigns.org</Email>
-  <Password>c2a9d63d5cf8c271a0a24467f0706114</Password>
+  <Email></Email>
+  <Password>test</Password>
   <Receive_Email>1</Receive_Email>
   <Email_Status></Email_Status>
   <Email_Preference>HTML Email</Email_Preference>
@@ -148,38 +118,7 @@ your participation. We look forward to seeing you on November 3.&lt;/p&gt;</Lett
   <Subject_cannot_be_Edited>0</Subject_cannot_be_Edited>
   <Letter_cannot_be_Edited>0</Letter_cannot_be_Edited>
   <Letter_Salutation></Letter_Salutation>
-  <Suggested_Content>&lt;p&gt;I'm writing to ask that you take the time on Saturday,
-November 3 to attend an event in san francisco, CA 
-and tell us how you plan to lead in the fight against global warming.&lt;/p&gt;
-
-&lt;p&gt;This event will be one of hundreds scheduled all across
-America on the same day, many of them in places that honor great leaders
-of the American pastâ??from the top of Mt. Washington to the birthplace of
-Rachel Carson to the site of the Lincoln Douglas debates. We think we
-need not just political rhetoric on this question, but real leadership,
-of the kind that America has always produced when the chips are down.&lt;/p&gt;
-
-&lt;p&gt;We're part of an emerging coalition of climate activists
-across the country that have come together to support three positions:
-80% cuts in carbon emissions by 2050, a moratorium on new coal-fired
-power plants, and a Green Jobs Corps to start transforming American
-homes and businesses. We'd love to hear your reaction to those ideasâ??do
-they go too far? Not far enough? But more importantly we want to hear
-&lt;emphasis&gt;your plans for leadership.&lt;/emphasis&gt;
-
-&lt;p&gt;We know this event falls during the planned Congressional
-recess and that your schedule is very busy. You don't need to prepare a
-lengthy orationâ??don't worry about convincing us that global warming is a
-problem. (We already know.) Please just take a few minutes to tell us
-how you plan to lead. We'll be taking video of the speakers so we can
-share it via the web across the state and the countryâ??hopefully by day's
-end on Nov. 3 we'll know how most of America's politicians think about
-this issue, and which ones are ready to be more than politicians. It
-should be an exciting day.&lt;/p&gt;
-
-&lt;p&gt;Please respond to seth walker to set up details for 
-your participation. We look forward to seeing you on November 3.&lt;/p&gt;
-</Suggested_Content>
+  <Suggested_Content>test</Suggested_Content>
   <Footer></Footer>
   <Hide_Message_Type_Options>0</Hide_Message_Type_Options>
   <Allow_Emails>1</Allow_Emails>
