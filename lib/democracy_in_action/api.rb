@@ -80,7 +80,7 @@ module DemocracyInAction
     #           String:  same as { 'key' => String }
     def get(table, options = nil)
       # make a HTTP post
-      body = sendRequest(@urls[:get], process_get_options(table, options))
+      body = send_request(@urls[:get], process_get_options(table, options))
 
       # interpret the results...
       # the description is a different format and needs a different parser
@@ -122,7 +122,7 @@ module DemocracyInAction
     #           String: same as { 'key' => String }
     # TODO: document link option???
     def process(table, options = nil)
-      sendRequest(@urls[:process], process_process_options( table, options )).strip
+      send_request(@urls[:process], process_process_options( table, options )).strip
     end
 
     # delete code
@@ -134,11 +134,11 @@ module DemocracyInAction
     # 
     #            if String, same as { 'key' => String }
     def delete(table, criteria)
-      options = processOptions(table, criteria)
+      options = process_options(table, criteria)
       options.delete('simple')
       options['xml'] = true
 
-      body = sendRequest(@urls[:delete], criteria)
+      body = send_request(@urls[:delete], criteria)
     
       # if it contains '<success', it worked, otherwise a failure
       if body.include?('<success')
@@ -159,6 +159,14 @@ module DemocracyInAction
       get(options[:table], 'count' => true, 'limit' => 1)
     end
     
+    def self.disable!
+      @@disabled = true
+    end
+
+    def self.disabled?
+      @@disabled ||= false
+    end
+
 
     ###################### INTERNAL CODE ###################
 
@@ -180,7 +188,7 @@ module DemocracyInAction
 
     # this takes the table name and (possibly nil) options
     # and returns one hash with them all, handling key processing
-    def processOptions(table, options)
+    def process_options(table, options)
       # handle no options as well as String representing the key value
       if (! options) then 
         options = { }
@@ -207,13 +215,13 @@ module DemocracyInAction
     end
 
     def process_process_options( table, options)
-      options = processOptions(table, options)
+      options = process_options(table, options)
       options['link'] = linkHashToQueryStringArray(options['link']) if options['link']
       options
     end
 
     def process_get_options(table, options)
-      process_multiple_keys( processOptions( table, options ))
+      process_multiple_keys( process_options( table, options ))
     end
 
     # links are sent in a Hash.
@@ -229,9 +237,9 @@ module DemocracyInAction
       end.flatten
     end
 
-    # helper function for sendRequest to handle multiple entries
+    # helper function for send_request to handle multiple entries
     # with same key name
-    def buildBody(options)
+    def build_body(options)
       # in order to handle multiple links, keys...
       # if an option has an Array as value, append each array element
       # as "<key>=<array element>&"
@@ -241,23 +249,10 @@ module DemocracyInAction
       end.join('&')
     end
 
-    def self.disable!
-      @@disabled = true
-    end
-
-    def self.disabled?
-      @@disabled ||= false
-    end
-
-    # specialized code to handle multiple form entries with same key name
-    # also does some error handling
-    def sendRequest(my_url, options, redirects = 5)
-      return '' if API.disabled?
-
+    def build_request(url, options)
       # make a HTTP post and set the cookies
-      url = URI.parse(my_url)
-      req = Net::HTTP::Post.new(url.path)
-      self.cookies.each { |c| req.add_field('Cookie', c) }
+      request = Net::HTTP::Post.new(url.path)
+      self.cookies.each { |c| request.add_field('Cookie', c) }
       
       # import authentication information
       options['organization_KEY'] = @orgkey if (@orgkey)
@@ -266,35 +261,39 @@ module DemocracyInAction
         options['password'] = @password
       end
 
-      # format request and get result
-      req.body = buildBody(options)
-      puts req.body if $DEBUG
-      req.set_content_type('application/x-www-form-urlencoded')
-      res = Net::HTTP.new(url.host, url.port).start { |http| http.request(req) }
+      #format request body
+      request.body = build_body(options)
+      request.set_content_type('application/x-www-form-urlencoded')
+      request
 
+    end
+
+    # specialized code to handle multiple form entries with same key name
+    # also does some error handling
+    def send_request(base_url, options)
+      return '' if API.disabled?
+
+      url = URI.parse(base_url) 
+      request = build_request(url, options)
+      puts request.body if $DEBUG
+
+      # get result
+      response = resolve( Net::HTTP.new(url.host, url.port).start { |http| http.request(request) } )
+
+      return response.body
+    end
+
+    # stores returned cookies to the api and checks for error conditiotnsn
+    def resolve( response )
       # error handling
-      # TODO: handle cookies
-      # TODO: catch error responses... on lines 3 and 4
       #  you see java.lang.Exception if there was an error
-      case res
-        when Net::HTTPSuccess
-          # Good, now grab any cookies we can
-          cookies = res.get_fields('Set-Cookie')
-          if cookies
-            cookies.each { |c| self.cookies.push(c.split(';')[0]) }
-          end
-        when Net::HTTPRedirection
-          # try to follow redirects, up to a maximum
-          raise(RuntimeError, "Too many redirects!") if (redirects <= 0)
-          loc = res['Location']
-          puts "Redirect to #{loc}" if $DEBUG
-          return sendRequest(loc, options, redirects - 1)
-        else
-          # or do something more interesting???
-          res.error!
+      return ( response.error! and response ) unless response.is_a?( Net::HTTPSuccess )
+
+      # Good, now grab any cookies we can
+      if cookies = response.get_fields('Set-Cookie')
+        cookies.each { |c| self.cookies.push(c.split(';')[0]) }
       end
-    
-      return res.body
+      response
     end
 
   end
