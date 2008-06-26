@@ -4,10 +4,10 @@ module DemocracyInAction
 
     DOMAINS = { 
       :salsa => { 
-        :login   => 'https://salsa.democracyinaction.org/dia/hq/processLogin.jsp',
-        :get     => 'http://salsa.democracyinaction.org/dia/api/get.jsp',
-        :process => 'http://salsa.democracyinaction.org/dia/api/process.jsp',
-        :delete  => 'http://salsa.democracyinaction.org/dia/deleteEntry.jsp'
+        :authenticate   => 'https://salsa.democracyinaction.org/api/authenticate.sjs',
+        :get            => 'http://salsa.democracyinaction.org/dia/api/get.jsp',
+        :process        => 'http://salsa.democracyinaction.org/dia/api/process.jsp',
+        :delete         => 'http://salsa.democracyinaction.org/dia/deleteEntry.jsp'
         },
       :wiredforchange => { 
         :get     => 'http://salsa.wiredforchange.com/dia/api/get.jsp',
@@ -25,7 +25,7 @@ module DemocracyInAction
     attr_reader :urls
 
     # options...  (default: above urls, no auth)
-    # authCodes => [name, password, orgkey]
+    # :username => user, :password => pass, :orgkey => org
     # urls => { 'get' => get_url, 'process'..., 'delete'..., 'unsub'... }
     def initialize(options = {})
       unless options && options[:username] && options[:password] && options[:orgkey] && ( options[:domain] || options[:urls] ) || self.class.disabled?
@@ -52,16 +52,30 @@ module DemocracyInAction
       end
     end
 
-    def login
-  #    puts "logging in" if $DEBUG
-      url = URI.parse(@urls[:login])
-      http = Net::HTTP.new(url.host, url.port)
-      http.use_ssl = true
-      res = http.post(url.path, "email=#{username}&password=#{password}")
+    def authenticate
+      url = URI.parse(@urls[:authenticate])
+      https = Net::HTTP.new(url.host, url.port)
+      https.use_ssl = true
+      https.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      response = https.post(url.path, "email=#{username}&password=#{password}")
 
-      if res['set-cookie']
-        res['set-cookie'].each { |c| cookies.push(c.split(';')[0]) }
+      raise ConnectionInvalid if authentication_failed?(response)
+      
+      if response['set-cookie']
+        response['set-cookie'].each { |c| cookies.push(c.split(';')[0]) }
       end
+
+      @authenticated = true
+
+      response
+    end
+
+    def authentication_failed?(response)
+      response['location'] =~ /login/ 
+    end
+
+    def authenticated?
+      @authenticated
     end
 
     # There are a lot of functions that take the same variable names..

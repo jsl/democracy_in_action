@@ -5,6 +5,51 @@ describe DemocracyInAction::API do
     @api = DemocracyInAction::API.new( api_arguments )
   end
 
+  describe "authentication" do
+    describe "with invalid credentials" do
+      before do
+        @api.stub!(:authentication_failed?).and_return(false)
+        @response = @api.authenticate
+      end
+      it "should return 302" do
+        @response.code.should == "302"
+      end
+      it "should have an empty body" do
+        @response.body.should be_empty
+      end
+      it "should redirect to login" do
+        @response['location'].should =~ /login.jsp/
+      end
+      it "should set cookie expires to the beginning of time" do
+        cookies = @response['set-cookie'].split('; ')
+        cookies.detect {|c| c =~ /Expires=Thu, 01-Jan-1970/}.should_not be_nil
+      end
+    end
+    describe "with valid credentials" do
+      before do
+        @api = DemocracyInAction::API.new( working_api_arguments )
+        @response = @api.authenticate
+      end
+      it "should return 302" do
+        @response.code.should == "302"
+      end
+      it "should have an empty body" do
+        @response.body.should be_empty
+      end
+      #NOTE: this is the only difference between success and failure
+      it "should not redirect to login" do
+        @response['location'].should_not =~ /login/
+      end
+      it "should redirect to hq" do
+        @response['location'].should =~ /hq/
+      end
+      it "should set cookie expires to the beginning of time" do
+        cookies = @response['set-cookie'].split('; ')
+        cookies.detect {|c| c =~ /Expires=Thu, 01-Jan-1970/}.should_not be_nil
+      end
+    end
+  end
+
   it "knows when it is connected" do
     api = DemocracyInAction::API.new( working_api_arguments )
     api.should be_connected
