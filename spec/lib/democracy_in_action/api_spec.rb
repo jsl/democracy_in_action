@@ -60,7 +60,7 @@ describe DemocracyInAction::API do
 
   describe "the results returned from get" do
     before do
-      @api.stub!(:sendRequest).and_return( fixture_file_read('supporter_by_limit_1.xml'))
+      @api.stub!(:send_request).and_return( fixture_file_read('supporter_by_limit_1.xml'))
       @result = @api.get('supporter', 'limit' => 1).first
     end
     it "should have hash like access" do
