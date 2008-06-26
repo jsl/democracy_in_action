@@ -58,6 +58,22 @@ describe DemocracyInAction::API do
     result['Email'].should_not be_nil
   end
 
+  describe "the results returned from get" do
+    before do
+      @api.stub!(:sendRequest).and_return( fixture_file_read('supporter_by_limit_1.xml'))
+      @result = @api.get('supporter', 'limit' => 1).first
+    end
+    it "should have hash like access" do
+      @result['First_Name'].should == 'test1'
+    end
+    it "should have method access" do
+      @result.First_Name.should == 'test1'
+    end
+    it "should be enumerable" do
+      @result.all?.should be_true
+    end
+  end
+
   it "sends data to DIA for processing" do
     unless @api.connected?
       @api.stub!(:sendRequest).and_return( fixture_file_read('process.xml'))

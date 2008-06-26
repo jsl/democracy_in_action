@@ -107,7 +107,7 @@ module DemocracyInAction
     end
 
     def parse_records(xml)
-      parse(xml).items
+      parse(xml).items.map {|item| Result.new(item)}
     end
 
     def parse_description(xml)
