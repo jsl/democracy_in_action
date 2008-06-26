@@ -101,6 +101,13 @@ describe DemocracyInAction::API do
           @api.send(:process_get_options, 'test', { :where => { :Email => 'joe@example.com', :Last_Name => "Bi'den" }})[:where].should == "Email = 'joe@example.com' AND Last_Name = 'Bi\\'den'"
         end
       end
+      describe "a :where parameter with a string" do
+        it "makes no changes" do
+          simple_condition =  "Email = 'joe@example.com' AND Last_Name => 'Biden'"
+          @api.send(:process_get_options, 'test', { :where => simple_condition })[:where].should == simple_condition
+        end
+        
+      end
   
     end
   end
