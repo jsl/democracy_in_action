@@ -18,11 +18,11 @@
   <email></email>
   <phone></phone>
   <fax></fax>
-  <address_line>PO Box 21327</address_line>
-  <address_line_2>ASU</address_line_2>
-  <municipality>Boone</municipality>
-  <region>NC</region>
-  <postal_code>28608</postal_code>
+  <address_line></address_line>
+  <address_line_2></address_line_2>
+  <municipality></municipality>
+  <region></region>
+  <postal_code></postal_code>
   <postal_code_extension></postal_code_extension>
   <county></county>
   <country>Un</country>
@@ -33,11 +33,11 @@
   <Last_Modified>2007-06-05 17:21:50.0</Last_Modified>
   <Date_Created>2007-05-30 18:33:12.0</Date_Created>
   <Title></Title>
-  <First_Name>Christopher</First_Name>
+  <First_Name></First_Name>
   <MI></MI>
-  <Last_Name>Bennett</Last_Name>
+  <Last_Name></Last_Name>
   <Suffix></Suffix>
-  <Email>ionntag@yahoo.com</Email>
+  <Email></Email>
   <Password></Password>
   <Receive_Email>1</Receive_Email>
   <Email_Status></Email_Status>
@@ -53,7 +53,7 @@
   <Pager></Pager>
   <Home_Fax></Home_Fax>
   <Work_Fax></Work_Fax>
-  <Street>5178 E Little Horse Creek Road</Street>
+  <Street>Road</Street>
   <Street_2></Street_2>
   <Street_3></Street_3>
   <City>Lansing</City>
@@ -88,11 +88,11 @@
   <Date_Created>2007-05-30 18:33:12.0</Date_Created>
   <organization_KEY>962</organization_KEY>
   <name></name>
-  <address_line>PO Box ASU</address_line>
+  <address_line></address_line>
   <address_line_2></address_line_2>
   <street_number></street_number>
   <street_predirection></street_predirection>
-  <street_name>PO Box ASU</street_name>
+  <street_name></street_name>
   <street_suffix></street_suffix>
   <street_postdirection></street_postdirection>
   <architecture></architecture>
@@ -113,8 +113,6 @@
   <latitude></latitude>
   <longitude></longitude>
   <full_address>
-PO  Box  
-Apt. ASU
 Boone, NC, 28608</full_address>
   </item><count>2308</count>
 </supporter_address></data>

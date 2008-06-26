@@ -14,11 +14,11 @@
   <PRIVATE_Manager_Type>Super Admin</PRIVATE_Manager_Type>
   <Job>Employee</Job>
   <Title></Title>
-  <First_Name>seth</First_Name>
+  <First_Name>test</First_Name>
   <MI></MI>
-  <Last_Name>walker</Last_Name>
-  <Email>seth@radicaldesigns.org</Email>
-  <Password>c2a9d63d5cf8c271a0a24467f0706114</Password>
+  <Last_Name>test</Last_Name>
+  <Email>email@example.com</Email>
+  <Password></Password>
   <Phone></Phone>
   <Cell_Phone></Cell_Phone>
   <Work_Phone></Work_Phone>
@@ -29,7 +29,7 @@
   <Zip>0</Zip>
   <PRIVATE_Zip_Plus_4></PRIVATE_Zip_Plus_4>
   <Country></Country>
-  <Note>requesting a testing account for radical designs, please.</Note>
+  <Note></Note>
   <PRIVATE_groups_KEYS></PRIVATE_groups_KEYS>
   <External_Password></External_Password>
   <Status>Active</Status>

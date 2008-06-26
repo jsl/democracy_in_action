@@ -9,26 +9,12 @@
   <campaign_manager_KEY>0</campaign_manager_KEY>
   <Last_Modified>2005-11-21 09:34:18.0</Last_Modified>
   <Date_Created>2005-11-18 21:51:47.0</Date_Created>
-  <Subject>linking supporter to group thru API not reflected in admin interface</Subject>
+  <Subject>test</Subject>
   <Status>Accepted</Status>
   <Priority>Medium</Priority>
-  <Body>when i link a supporter to a group using the api, either using the link=group|key, a la
-
-http://api.demaction.org/dia/api/process.jsp?user=test&amp;password=test&amp;table=supporter&amp;Email=DIATest11181907%40radicaldesigns.org&amp;link=groups|26239
-
-or trying to set a supporter_groups record directly, a la
-
-http://api.demaction.org/dia/api/process.jsp?user=test&amp;password=test&amp;table=supporter_groups&amp;supporter_KEY=8336243&amp;groups_KEY=26239
-
-i don't see the supporter listed as a member of the group in the manage groups interface.  what's more, when i use the api to download the supporter_groups table, i don't see any record of that association.  however, if i view the groups tab of the supporter record, it shows that the supporter is a member of that group and allows me to delete that relationship.
-
-what's going on here?  besides wanting to be able to browse the members of a group no matter how they were added, i need to be able to tell if a subscribe worked or not thru the api.  is there any way of checking the membership of a supporter in a group thru the api?
-
-thanks,
-
-seth</Body>
+  <Body>test</Body>
   <Response></Response>
-  <Notification_Email>seth@radicaldesigns.org</Notification_Email>
+  <Notification_Email>test</Notification_Email>
   </item><count>4</count>
 </trouble_ticket></data>
 

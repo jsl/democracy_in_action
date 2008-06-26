@@ -10,30 +10,8 @@
   <Reference_Name>msc</Reference_Name>
   <Last_Modified></Last_Modified>
   <Date_Created>2006-07-08 12:13:07.0</Date_Created>
-  <Title>Sign up for MSC updates!</Title>
-  <Header>First name -S
-Last name -S
-Home Address: -S
-    City:S
-    State:
-    Zip:
-Home Phone:
-Cell Phone:
-Work Phone: -? --- Work_Phone
-    Extension: -?
-Preferred Phone (can this be a pulldown menu with home, work, cell on it?) -custom
-email:
-website: -? --- Web_Page
-chatname: -? --- Instant_Messenger_Name
-    client: (pulldown menu of: aol, icq, msn, yahoo) --- Instant_Messenger_Service
-
-Please check any of the following MSC Program Areas that you would like to receive more information about:
-
-    * Alliance &amp; Coalition Building
-
-MSC works primarily in the following Issue Areas. Please check any that pertain to your work, or that you would like to receive information about:
-
-    * Arts &amp; Culture/ Hip Hop Organizing</Header>
+  <Title>signup for updates!</Title>
+  <Header>header</Header>
   <Request>0,First_Name,Last_Name,Street,City,State,Zip,Phone,Cell_Phone,Email,0,RADIO0,BOOL0,BOOL1,BOOL2,BOOL3,BOOL4,BOOL5,BOOL6,BOOL7,BOOL8,BOOL9,BOOL10,BOOL11,BOOL12,BOOL13</Request>
   <Required>0,0,</Required>
   <Include_Remember_Me_Link>0</Include_Remember_Me_Link>
