@@ -146,7 +146,7 @@ describe DemocracyInAction::API do
   end
 
   describe "initialize" do
-    it "should raise an error if username, password, orgkey, or domain is not specified" do
+    it "should raise an error if username, password, orgkey, or node is not specified" do
       lambda{DemocracyInAction::API.new({})}.should raise_error
     end
     api_arguments.each do |key, value| 
@@ -155,19 +155,19 @@ describe DemocracyInAction::API do
       end
     end
 
-    it "assigns urls based on the passed domain" do
+    it "assigns urls based on the passed node" do
       @api = DemocracyInAction::API.new( api_arguments ) 
-      @api.urls.should == DemocracyInAction::API::DOMAINS[api_arguments[:domain]]
+      @api.urls.should == DemocracyInAction::API::NODES[api_arguments[:node]]
     end
 
-    it "raises an error if an unsupported domain is passed" do
-      lambda {DemocracyInAction::API.new( api_arguments.merge({ :domain => :joe }) ) }.should raise_error
+    it "raises an error if an unsupported node is passed" do
+      lambda {DemocracyInAction::API.new( api_arguments.merge({ :node => :joe }) ) }.should raise_error
     end
 
-    describe "accepts custom urls in place of a domain" do
+    describe "accepts custom urls in place of a node" do
       before do
         @args = api_arguments.dup
-        @args.delete(:domain)
+        @args.delete(:node)
       end
       it "raises an error if the urls are bad" do
         lambda {DemocracyInAction::API.new( @args.merge({ :urls => { :joe => 'bears' }}) ) }.should raise_error( DemocracyInAction::API::ConnectionInvalid )

@@ -28,7 +28,7 @@ module DemocracyInAction
     class ConnectionInvalid < ArgumentError #:nodoc:
     end
 
-    DOMAINS = { 
+    NODES = { 
       :sandbox => {
         :authenticate   => 'https://sandbox.democracyinaction.org/api/authenticate.sjs',
         :get            => 'http://salsa.democracyinaction.org/dia/api/get.jsp',
@@ -53,23 +53,23 @@ module DemocracyInAction
         }
       }
 
-    attr_reader :username, :password, :orgkey, :domain
+    attr_reader :username, :password, :orgkey, :node
     attr_reader :urls
 
     # requires an options hash containing:
-    # :username, :password, :orgkey, and :domain
-    #   :domain may be omitted if the user specifies a custom service node with a :urls hash
+    # :username, :password, :orgkey, and :node
+    #   :node may be omitted if the user specifies a custom service node with a :urls hash
     # the urls hash should be in the form:
     #   :urls => { :get => get_url, :process => process_url, :delete => delete_url }
     def initialize(options = {})
-      unless options && options[:username] && options[:password] && options[:orgkey] && ( options[:domain] || options[:urls] ) || self.class.disabled?
-        raise ConnectionInvalid.new("Must specify :username, :password, :orgkey, and ( :domain or :url )")
+      unless options && options[:username] && options[:password] && options[:orgkey] && ( options[:node] || options[:urls] ) || self.class.disabled?
+        raise ConnectionInvalid.new("Must specify :username, :password, :orgkey, and ( :node or :url )")
       end 
 
-      @username, @password, @orgkey, @domain = options.delete(:username), options.delete(:password), options.delete(:orgkey), options.delete(:domain)
+      @username, @password, @orgkey, @node = options.delete(:username), options.delete(:password), options.delete(:orgkey), options.delete(:node)
 
-      @urls = options[:urls] || DOMAINS[@domain]
-      raise ConnectionInvalid.new("Requested domain is not supported.  Use (#{DOMAINS.keys.join(', ')}) or specify a custom array in :urls") unless @urls
+      @urls = options[:urls] || NODES[@node]
+      raise ConnectionInvalid.new("Requested node is not supported.  Use (#{NODES.keys.join(', ')}) or specify a custom array in :urls") unless @urls
       raise ConnectionInvalid.new("Urls must be a hash") unless @urls.is_a?(Hash)
       raise ConnectionInvalid.new("Urls must include at least :get, :process, and :delete") unless @urls[:get] and @urls[:process] and @urls[:delete]
     end
@@ -78,7 +78,7 @@ module DemocracyInAction
   # returns a boolean
     def connected?
       begin
-        API.disabled? || !(@username && @password && @orgkey && @domain && get( :table => 'supporter', 'desc' => 1 )).nil?
+        API.disabled? || !(@username && @password && @orgkey && @node && get( :table => 'supporter', 'desc' => 1 )).nil?
       rescue SocketError #means the library cannot reach the DIA server at all, or no internet is available
         false
       end
