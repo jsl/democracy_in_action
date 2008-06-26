@@ -9,7 +9,7 @@ describe "DemocracyInAction::API Parser" do
   describe "parsing out the count" do
     it "should return the proper count" do
       xml = fixture_file_read('supporters.xml')
-      @api.parse_count(xml).should == 11467
+      @api.parse(xml).count.should == 11467
     end
   end
 
@@ -44,7 +44,7 @@ describe "DemocracyInAction::API Parser" do
 
     end
     it "reads the table description" do
-      @api.parse_description(@desc).first.key.should == 'PRI'
+      @api.parse_description(@desc)[:supporter_KEY].key.should == 'PRI'
     end
   end
 

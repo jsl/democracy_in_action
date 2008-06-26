@@ -56,16 +56,13 @@ describe DemocracyInAction::API do
 
     describe "process_options" do
       it "returns a hash when passed a nil value" do
-        @api.send(:process_options, "test", nil).should be_an_instance_of(Hash)
+        @api.send(:process_options, nil).should be_an_instance_of(Hash)
       end
       it "returns a hash with key 'key' when passed a single key" do
-        @api.send(:process_options, "test", 5)['key'].should == 5
-      end
-      it "always adds the table value to the hash" do
-        @api.send(:process_options, "test", nil)['table'].should == 'test'
+        @api.send(:process_options, 5)[:key].should == 5
       end
       it "always specifies the request is simple, so as to receive an xml response" do
-        @api.send(:process_options, "test", nil)['simple'].should == true
+        @api.send(:process_options, nil)[:simple].should == true
       end
     end
 
@@ -90,24 +87,23 @@ describe DemocracyInAction::API do
 
     describe "with process_get_options" do
       it "should return a hash with table and simple" do
-        @api.send(:process_get_options, 'test', nil ).keys.should include( 'table' )
-        @api.send(:process_get_options, 'test', nil ).keys.should include( 'simple' )
+        @api.send(:process_get_options, nil ).keys.should include( :simple )
       end
       describe "a :where parameter with a hash" do
 
         it "should convert to an 'AND' delimited string" do
-          @api.send(:process_get_options, 'test', { :where => { :Email => 'joe@example.com', :Last_Name => 'Biden' }})[:where].should match(/Last_Name = 'Biden' AND Email = 'joe@example.com'|Email = 'joe@example.com' AND Last_Name = 'Biden'/)
+          @api.send(:process_get_options, { :table => 'test', :where => { :Email => 'joe@example.com', :Last_Name => 'Biden' }})[:where].should match(/Last_Name = 'Biden' AND Email = 'joe@example.com'|Email = 'joe@example.com' AND Last_Name = 'Biden'/)
         end
 
         it "should escape values with single quotes in them" do
           #@api.send(:process_get_options, 'test', { :where => { :Email => 'joe@example.com', :Last_Name => "Bi'den" }})[:where].should == "Last_Name = 'Bi\\'den' AND Email = 'joe@example.com'"
-          @api.send(:process_get_options, 'test', { :where => { :Email => 'joe@example.com', :Last_Name => "Bi'den" }})[:where].should match(/Last_Name = 'Bi\\\'den' AND Email = 'joe@example.com'|Email = 'joe@example.com' AND Last_Name = 'Bi\\\'den'/)
+          @api.send(:process_get_options, { :where => { :Email => 'joe@example.com', :Last_Name => "Bi'den" }})[:where].should match(/Last_Name = 'Bi\\\'den' AND Email = 'joe@example.com'|Email = 'joe@example.com' AND Last_Name = 'Bi\\\'den'/)
         end
       end
       describe "a :where parameter with a string" do
         it "makes no changes" do
           simple_condition =  "Email = 'joe@example.com' AND Last_Name => 'Biden'"
-          @api.send(:process_get_options, 'test', { :where => simple_condition })[:where].should == simple_condition
+          @api.send(:process_get_options, { :where => simple_condition })[:where].should == simple_condition
         end
         
       end
@@ -135,8 +131,8 @@ describe DemocracyInAction::API do
     end
     describe "process_process_options" do
       it "should call process options to process the options" do
-        @api.should_receive(:process_options).with('supporter', {"hello" => "i love you"}).and_return({})
-        @api.send(:process_process_options, 'supporter', {"hello" => "i love you"})
+        @api.should_receive(:process_options).with({"hello" => "i love you"}).and_return({})
+        @api.send(:process_process_options, {"hello" => "i love you"})
       end
     end
   end
@@ -181,12 +177,12 @@ describe DemocracyInAction::API do
         end
         it "is sent" do
           @net_req.should_receive(:start).and_return( @net_req )
-          @api.send(:send_request, @api.urls[:get], {})
+          @api.send(:send_request, @api.urls[:get], { :table => 'cheese' })
         end
         it "is resolved" do
           @net_req.stub!(:start).and_return(@net_req)
           @api.should_receive(:resolve).with(@net_req).and_return( @net_req )
-          @api.send(:send_request, @api.urls[:get], {})
+          @api.send(:send_request, @api.urls[:get], { :table => 'cheese' })
         end
       end
 

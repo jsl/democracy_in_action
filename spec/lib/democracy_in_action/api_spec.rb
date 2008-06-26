@@ -258,6 +258,11 @@ describe DemocracyInAction::API do
       @api.stub!(:send_request).and_return(fixture_file_read('supporter_by_limit_1.xml'))
       @api.count(:table => 'supporter').should == 11466 
     end
+    it "forwards the options to the get method" do
+      start_args = { :table => 'supporter' }
+      @api.should_receive(:send_request).with( @api.urls[:get], hash_including( start_args )).and_return( fixture_file_read('supporter_by_limit_1.xml'))
+      @api.supporter.count
+    end
   end
 
   describe "columns method" do
