@@ -1,43 +1,55 @@
 = democracy_in_action
 
-* FIX (url)
+* http://github.com/sethwalker/democracy_in_action
 
 == DESCRIPTION:
 
-FIX (describe your package)
+A collection of tools for storing and retrieving data in your Democracy in Action account.
 
-== FEATURES/PROBLEMS:
-
-* FIX (list of features or problems)
 
 == SYNOPSIS:
 
-  FIX (code sample of usage)
+===Examples:
+
+Creating a connection to Democracy in Action:
+  @dia = DemocracyInAction::API.new( :username => 'bob@example.org', :password => 'secret', :domain => :salsa, :orgkey => 911 )
+
+Retrieving a list of groups in your account, and getting all their names:
+  @dia.groups.get.map{ |g| g.Group_Name }
+
+View a list of tables available in Democracy In Action:
+  puts DemocracyInAction::Tables::TABLES
+
+View the columns available for your supporters:
+  puts @dia.supporter.describe
+
+Get a list of supporters who work for google:
+  googlers = @dia.supporter.get( :where => "Email LIKE '%google.com'" )
+
+=====Searches will return an array of DemocracyInAction::Results
+
+These can be accessed by methods matching the column names:
+  puts 'jackpot!' if googlers.first.First_Name == 'Sergei'
+
+Or you can treat them as a hash:
+  puts 'double jackpot!' if googlers.first['First_Name'] == 'Larry'
+
+
 
 == REQUIREMENTS:
 
-* FIX (list of requirements)
+Ruby v1.8.6
 
 == INSTALL:
 
-* FIX (sudo gem install, anything else)
+sudo gem install sethwalker-democracy_in_action -s http://gems.github.com
 
 == LICENSE:
 
-(The MIT License)
+This library is covered by the LGPL License, version 3
+http://www.gnu.org/copyleft/lesser.html
 
-Copyright (c) 2008 FIXME full name
-
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the
-'Software'), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
-
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
+Copyright (c) 2008 Radical Designs
 
 THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
 EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
