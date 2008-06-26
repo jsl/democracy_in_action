@@ -45,8 +45,11 @@ module DemocracyInAction
     end
 
     def connected?
-      #!(@username && @password && @orgkey && @domain ).nil?
-      API.disabled? || !(@username && @password && @orgkey && @domain && get( :table => 'supporter', 'desc' => 1 )).nil?
+      begin
+        API.disabled? || !(@username && @password && @orgkey && @domain && get( :table => 'supporter', 'desc' => 1 )).nil?
+      rescue SocketError #means the library cannot reach the DIA server at all, or no internet is available
+        false
+      end
     end
 
     def login
@@ -145,6 +148,9 @@ module DemocracyInAction
 
 	#update an existing record
 	def put( options = {} )
+    required_keys = [ :key, 'key', options[:table] + '_KEY', ( options[:table] + '_KEY').to_sym ]
+    required_keys += [ 'Email', :Email ] if options[:table] == 'supporter' || options[:table] == :supporter
+    raise InvalidKey.new( "You must specify :key, :Email, or #{options[:table]}_KEY to update a record" ) unless options.any? { |optkey, value| required_keys.include?(optkey) }
 	  process( options ) 
 	end
 
@@ -327,11 +333,12 @@ module DemocracyInAction
       response
     end
 
+    class InvalidKey < ArgumentError; end
   end
 
   class ConnectionInvalid < ArgumentError; end
   class TableProxy
-    TABLE_PROXY_METHODS = [:get, :process, :delete, :columns, :describe, :count]
+    TABLE_PROXY_METHODS = [:get, :process, :delete, :columns, :describe, :count, :put, :post ]
     TABLE_PROXY_METHODS.each { |method| undef_method( method ) if instance_methods.include?( method.to_s ) }
 
     def initialize(api, table_name)
