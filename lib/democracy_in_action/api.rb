@@ -221,7 +221,14 @@ module DemocracyInAction
     end
 
     def process_get_options(table, options)
-      process_multiple_keys( process_options( table, options ))
+      process_multiple_keys( process_conditions( process_options( table, options )))
+    end
+
+    def process_conditions( options = {} )
+      conditions = options.delete(:where) || options.delete('where')
+      return options unless conditions
+      return options.merge(:where => conditions) unless conditions.is_a?(Hash)
+      options.merge( :where => conditions.inject( [] ) { |memo, (column, value)| memo << "#{column} = '#{value.gsub(/[']/, '\\\\\'')}'" }.join( ' AND '))
     end
 
     # links are sent in a Hash.
@@ -283,7 +290,7 @@ module DemocracyInAction
       return response.body
     end
 
-    # stores returned cookies to the api and checks for error conditiotnsn
+    # stores returned cookies to the api and checks for error conditions
     def resolve( response )
       # error handling
       #  you see java.lang.Exception if there was an error
