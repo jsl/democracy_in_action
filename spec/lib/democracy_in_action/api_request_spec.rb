@@ -95,10 +95,10 @@ describe DemocracyInAction::API do
       end
       describe "a :where parameter with a hash" do
         it "should convert to an 'AND' delimited string" do
-          @api.send(:process_get_options, 'test', { :where => { :Email => 'joe@example.com', :Last_Name => 'Biden' }})[:where].should == "Email = 'joe@example.com' AND Last_Name = 'Biden'"
+          @api.send(:process_get_options, 'test', { :where => { :Email => 'joe@example.com', :Last_Name => 'Biden' }})[:where].should == "Last_Name = 'Biden' AND Email = 'joe@example.com'"
         end
         it "should escape values with single quotes in them" do
-          @api.send(:process_get_options, 'test', { :where => { :Email => 'joe@example.com', :Last_Name => "Bi'den" }})[:where].should == "Email = 'joe@example.com' AND Last_Name = 'Bi\\'den'"
+          @api.send(:process_get_options, 'test', { :where => { :Email => 'joe@example.com', :Last_Name => "Bi'den" }})[:where].should == "Last_Name = 'Bi\\'den' AND Email = 'joe@example.com'"
         end
       end
       describe "a :where parameter with a string" do
