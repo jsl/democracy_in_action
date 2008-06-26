@@ -19,6 +19,7 @@ module DemocracyInAction
         :delete  => 'http://org2.democracyinaction.org/dia/api/delete.jsp'
         }
       }
+    TABLES = [ :supporter, :groups ]
 
     attr_reader :username, :password, :orgkey, :domain
     attr_reader :urls
@@ -86,7 +87,7 @@ module DemocracyInAction
       # the description is a different format and needs a different parser
       return nil if parse_error(body)
       return parse_description( body ) if (options['desc'])
-      return parse_count if (options['count'])
+      return parse_count( body ) if (options['count'])
 
       parse_records( body )
     end
@@ -148,9 +149,31 @@ module DemocracyInAction
         return false
       end
     end
+
+    def columns(options)
+      #raise (self.class.instance_methods - Object.instance_methods).inspect
+      get(options[:table], 'desc' => true)
+    end
+    alias :describe :columns
+
+    def count(options)
+      get(options[:table], 'count' => true, 'limit' => 1)
+    end
+    
+
     ###################### INTERNAL CODE ###################
 
     protected
+
+    def method_missing(*args)
+      table_name = args.first
+      
+      if TABLES.include?(table_name)
+        return TableProxy.new(self, table_name)
+      end
+      super *args
+    end
+
     # copied from private function in Net::HTTP
     def urlencode(str)
       str.gsub(/[^a-zA-Z0-9_\.\-]/n) {|s| sprintf('%%%02x', s[0]) }
@@ -278,4 +301,23 @@ module DemocracyInAction
   end
 
   class ConnectionInvalid < ArgumentError; end
+  class TableProxy
+    TABLE_PROXY_METHODS = [:get, :process, :delete, :columns, :describe, :count]
+    TABLE_PROXY_METHODS.each { |method| undef_method( method ) if instance_methods.include?( method.to_s ) }
+
+    def initialize(api, table_name)
+      @api = api
+      @table_name = table_name
+    end
+
+    def method_missing(*args)
+      start_args = args.dup
+      method_name = args.shift
+      if TABLE_PROXY_METHODS.include?(method_name)
+        options = args.shift || {}
+        return @api.send(method_name, options.merge( :table => @table_name.to_s ) )
+      end
+      @api.send(method_name, *args)
+    end
+  end
 end
