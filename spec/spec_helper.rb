@@ -18,10 +18,10 @@ Spec::Runner.configure do |config|
     {:username => user, :password => pass, :orgkey => org, :domain => domain}
 	end
 	def working_api_arguments
-    user = ENV['DIA_USER'] || 'test'
-    pass = ENV['DIA_PASS'] || 'test'
+    user = ENV['DIA_USER'] || 'demo'
+    pass = ENV['DIA_PASS'] || 'demo'
     org = ENV['DIA_ORG'] || 962 
-    domain = ENV['DIA_DOMAIN'] || :salsa
+    domain = ENV['DIA_DOMAIN'] || :sandbox
     {:username => user, :password => pass, :orgkey => org, :domain => domain}
 	end
 
