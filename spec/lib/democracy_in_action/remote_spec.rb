@@ -86,13 +86,11 @@ describe "DIA Service" do
       describe "when authenticated" do
         it "should have a success message" do
           r = @authed.make_https_request("https://sandbox.democracyinaction.org/delete?object=supporter&key=#{@key}&xml=1")
-          pp [ r.body, r.to_hash ]
           r.body.should match( %r-<success table="supporter- )
         end
 
         it "should set an org token cookie" do
           r = @authed.make_https_request("https://sandbox.democracyinaction.org/delete?object=supporter&key=#{@key}&xml=1")
-          pp [ r.body, r.to_hash ]
           r['set-cookie'].should be_nil
         end
       end
