@@ -102,21 +102,22 @@ module DemocracyInAction
     end
 
     def authenticate
+      response = authentication_request
+      if !authentication_failed?(response) && response['set-cookie']
+        response['set-cookie'].each { |c| cookies.push(c.split(';')[0]) }
+        @authenticated = true
+      else
+        @authenticated = false
+#        raise ConnectionInvalid if authentication_failed?(response)
+      end
+    end
+
+    def authentication_request
       url = URI.parse(@urls[:authenticate])
       https = Net::HTTP.new(url.host, url.port)
       https.use_ssl = true
       https.verify_mode = OpenSSL::SSL::VERIFY_NONE
-      response = https.post(url.path, "email=#{username}&password=#{password}")
-
-      raise ConnectionInvalid if authentication_failed?(response)
-      
-      if response['set-cookie']
-        response['set-cookie'].each { |c| cookies.push(c.split(';')[0]) }
-      end
-
-      @authenticated = true
-
-      response
+      https.post(url.path, "email=#{username}&password=#{password}")
     end
 
     def authentication_failed?(response)
