@@ -12,46 +12,77 @@ describe "DIA Service" do
 
   describe "authentication" do
     describe "with invalid credentials" do
-      before do
-        @api = DemocracyInAction::API.new( api_arguments ) 
-        @api.stub!(:authentication_failed?).and_return(false)
-        @response = @api.authenticate
+      describe "authentication_request" do
+        before do
+          @api = DemocracyInAction::API.new( api_arguments ) 
+          @response = @api.authentication_request
+        end
+        it "should return 302" do
+          @response.code.should == "302"
+        end
+        it "should have an empty body" do
+          @response.body.should be_empty
+        end
+        it "should redirect to login" do
+          @response['location'].should =~ /login.jsp/
+        end
+        it "should set cookie expires to the beginning of time" do
+          cookies = @response['set-cookie'].split('; ')
+          cookies.detect {|c| c =~ /Expires=Thu, 01-Jan-1970/}.should_not be_nil
+        end
       end
-      it "should return 302" do
-        @response.code.should == "302"
-      end
-      it "should have an empty body" do
-        @response.body.should be_empty
-      end
-      it "should redirect to login" do
-        @response['location'].should =~ /login.jsp/
-      end
-      it "should set cookie expires to the beginning of time" do
-        cookies = @response['set-cookie'].split('; ')
-        cookies.detect {|c| c =~ /Expires=Thu, 01-Jan-1970/}.should_not be_nil
+      describe "authenticate" do
+        before do
+          @api = DemocracyInAction::API.new( api_arguments ) 
+        end
+        it "should return false" do
+          @api.authenticate.should be_false
+        end
+        it "should return false in authenticated?" do
+          @api.authenticate
+          @api.authenticated?.should be_false
+        end
+        it "should raise an error" do
+          pending
+          lambda {@api.authenticate}.should raise_error
+        end
       end
     end
     describe "with valid credentials" do
-      before do
-        @api = DemocracyInAction::API.new( working_api_arguments )
-        @response = @api.authenticate
+      describe "authentication_request" do
+        before do
+          @api = DemocracyInAction::API.new( working_api_arguments )
+          @response = @api.authentication_request
+        end
+        it "should return 302" do
+          @response.code.should == "302"
+        end
+        it "should have an empty body" do
+          @response.body.should be_empty
+        end
+        #NOTE: this is the only difference between success and failure
+        it "should not redirect to login" do
+          @response['location'].should_not =~ /login/
+        end
+        it "should redirect to hq" do
+          @response['location'].should =~ /hq/
+        end
+        it "should set cookie expires to the beginning of time" do
+          cookies = @response['set-cookie'].split('; ')
+          cookies.detect {|c| c =~ /Expires=Thu, 01-Jan-1970/}.should_not be_nil
+        end
       end
-      it "should return 302" do
-        @response.code.should == "302"
-      end
-      it "should have an empty body" do
-        @response.body.should be_empty
-      end
-      #NOTE: this is the only difference between success and failure
-      it "should not redirect to login" do
-        @response['location'].should_not =~ /login/
-      end
-      it "should redirect to hq" do
-        @response['location'].should =~ /hq/
-      end
-      it "should set cookie expires to the beginning of time" do
-        cookies = @response['set-cookie'].split('; ')
-        cookies.detect {|c| c =~ /Expires=Thu, 01-Jan-1970/}.should_not be_nil
+      describe "authenticate" do
+        before do
+          @api = DemocracyInAction::API.new( working_api_arguments )
+        end
+        it "should return true" do
+          @api.authenticate.should be_true
+        end
+        it "should return true in authenticated?" do
+          @api.authenticate
+          @api.authenticated?.should be_true
+        end
       end
     end
   end
@@ -59,7 +90,6 @@ describe "DIA Service" do
   describe "responses" do
     before do
       @unauthed = DemocracyInAction::API.new( api_arguments )
-      @unauthed.stub!(:authentication_failed?).and_return(false)
       @unauthed.authenticate
 
       @authed = DemocracyInAction::API.new( working_api_arguments )
