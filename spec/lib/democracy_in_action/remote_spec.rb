@@ -1,5 +1,5 @@
 require File.dirname(__FILE__) + "/../../spec_helper"
-
+=begin
 describe "DIA Service" do
   before do
     @api = DemocracyInAction::API.new( working_api_arguments ) 
@@ -292,3 +292,4 @@ describe "DIA Service" do
     end
   end
 end
+=end

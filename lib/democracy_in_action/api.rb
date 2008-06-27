@@ -13,7 +13,7 @@ module DemocracyInAction
   # More details on individual functions
   #
   # API notes:  there are some bug(?) in the DIA side...
-  #   1. only characters accepted in where clause [0-9a-zA-Z_ .'"<>!=%+&@-]
+  #   1. only characters accepted in condition clause [0-9a-zA-Z_ .'"<>!=%+&@-]
   #      therefore, don't put others (like ,) in names or you can't search
   #   2. you cannot search the supporter_groups links by groups_KEY
   #   3. you can link supporters to invalid group keys (and visa versa)
@@ -37,23 +37,23 @@ module DemocracyInAction
       :sandbox => {
         :authenticate   => 'https://sandbox.democracyinaction.org/api/authenticate.sjs',
         :get            => 'http://salsa.democracyinaction.org/dia/api/get.jsp',
-        :process        => 'http://salsa.democracyinaction.org/dia/api/process.jsp',
+        :save        => 'http://salsa.democracyinaction.org/dia/api/process.jsp',
         :delete         => 'http://salsa.democracyinaction.org/dia/deleteEntry.jsp'
         },
       :salsa => { 
         :authenticate   => 'https://salsa.democracyinaction.org/api/authenticate.sjs',
         :get            => 'http://salsa.democracyinaction.org/dia/api/get.jsp',
-        :process        => 'http://salsa.democracyinaction.org/dia/api/process.jsp',
+        :save        => 'http://salsa.democracyinaction.org/dia/api/process.jsp',
         :delete         => 'http://salsa.democracyinaction.org/dia/deleteEntry.jsp'
         },
       :wiredforchange => { 
         :get     => 'http://salsa.wiredforchange.com/dia/api/get.jsp',
-        :process => 'http://salsa.wiredforchange.com/dia/api/process.jsp',
+        :save => 'http://salsa.wiredforchange.com/dia/api/process.jsp',
         :delete  => 'http://salsa.wiredforchange.com/dia/deleteEntry.jsp'
         },
       :org2 => { 
         :get     => 'http://org2.democracyinaction.org/dia/api/get.jsp',
-        :process => 'http://org2.democracyinaction.org/dia/api/process.jsp',
+        :save => 'http://org2.democracyinaction.org/dia/api/process.jsp',
         :delete  => 'http://org2.democracyinaction.org/dia/api/delete.jsp'
         }
       }
@@ -68,7 +68,7 @@ module DemocracyInAction
     # You can omit :node if you specify a custom service node with a :urls hash.
     #
     # If a :urls hash is used, it should have the form:
-    #   :urls => { :get => "get_url", :process => "process_url", :delete => "delete_url" }
+    #   :urls => { :get => "get_url", :save => "save_url", :delete => "delete_url" }
     def initialize(options = {})
       unless options && options[:username] && options[:password] && options[:orgkey] && ( options[:node] || options[:urls] ) || self.class.disabled?
         raise ConnectionInvalid.new("Must specify :username, :password, :orgkey, and ( :node or :url )")
@@ -79,7 +79,7 @@ module DemocracyInAction
       @urls = options[:urls] || NODES[@node]
       raise ConnectionInvalid.new("Requested node is not supported.  Use (#{NODES.keys.join(', ')}) or specify a custom array in :urls") unless @urls
       raise ConnectionInvalid.new("Urls must be a hash") unless @urls.is_a?(Hash)
-      raise ConnectionInvalid.new("Urls must include at least :get, :process, and :delete") unless @urls[:get] and @urls[:process] and @urls[:delete]
+      raise ConnectionInvalid.new("Urls must include at least :get, :save, and :delete") unless @urls[:get] and @urls[:save] and @urls[:delete]
     end
 
     # confirms that the API is enabled and the Democracy in Action service node is reachable
@@ -144,10 +144,12 @@ module DemocracyInAction
     # Return one or more records from the service
     #   :table - required option
     # Also supports
-    #   :where
-    #   :limit
-    #   :order
-    #   :key
+    #   :condition 
+    #      * a string or array of strings in the format of SQL WHERE clauses, = and LIKE operators may be used
+    #      * a hash in the form of { :field_name => value, :field_name => value }
+    #   :limit - an integer or equivalent string representing the maximum number of desired results
+    #   :orderBy - a string in the form of an SQL ORDER BY clause, representing the desired sorting pattern of the result set
+    #   :key - an integer representing the id of the desired result
     def get(options = {})
       body = send_request(@urls[:get], options_for_get(options))
       parse_records( body ) unless has_error?( body )
@@ -162,47 +164,36 @@ module DemocracyInAction
     #   :link - a hash for linking new records to objects already on the service
     #
     # Links should be passed in the form
-    #   options = { :link => { :[table name] => id, :[second table name] }}
-    def process(options = nil)
-      send_request(@urls[:process], options.merge(key_param(options))).strip
+    #   options = { :link => { :[table name] => key, :[second table name] => key }}
+    def save(options = nil)
+      send_request(@urls[:save], options.merge(key_param(options))).strip
     end
 
-    #create a new record
+    # Create a new record
+    # Requires :table, as well as any attributes which should be set on the new record
     def post( options = {})
-      process( options ) 
+      save( options ) 
     end
 
-    #update an existing record
+    # Update an existing record
+    # Requires :table, an identifying key such as :key, :[table_name]_KEY, or Email
+    # Also requires the attributes to be updated, included in the options hash
     def put( options = {} )
       required_keys = [ :key, 'key', options[:table] + '_KEY', ( options[:table] + '_KEY').to_sym ]
       required_keys += [ 'Email', :Email ] if options[:table] == 'supporter' || options[:table] == :supporter
       raise InvalidKey.new( "You must specify :key, :Email, or #{options[:table]}_KEY to update a record" ) unless options.any? { |optkey, value| required_keys.include?(optkey) }
-      process( options ) 
+      save( options ) 
     end
 
-    # delete code
-    # returns true if it works, false otherwise
-    # takes an hash like {'key' => key}
-    # haven't found other options to work
-    #
-    # criteria - any value column/values pair on the table (as Hash) 
-    # 
-    #            if String, same as { 'key' => String }
-    def delete(criteria)
-      #table = criteria.delete('table') || criteria.delete(:table)
-      options = key_param(criteria)
-      #indicate that xml is the desired response
-      options[:xml] = true
-
-      body = send_request(@urls[:delete], criteria)
+    # Delete an existing record
+    # Requires :table and an identifying key such as :key, :[table_name]_KEY, or Email
+    # returns true if it works, nil otherwise
+    def delete(*args)
+      options = key_param(key)
+      body = send_request(@urls[:delete], options)
     
       # if it contains '<success', it worked, otherwise a failure
-      if body.include?('<success')
-        return true
-      else
-        puts body if $DEBUG
-        return false
-      end
+      body.include?('<success')
     end
 
     # Return a description of the columns for a given table
@@ -215,11 +206,10 @@ module DemocracyInAction
       body = send_request @urls[:get], options_for_get(options)
       parse_description( body ) unless has_error?(body)
     end
-    alias :describe :columns
 
     # Returns an integer for the number of records specified.
     #
-    # Requires a :table and allows a :where to restrict the result set.
+    # Requires a :table and allows a :condition to restrict the result set.
     def count(options = {})
       #get(options.merge('count' => true, 'limit' => 1))
       options[:limit] = 1
@@ -233,10 +223,14 @@ module DemocracyInAction
     #protected
     private
 
+	#evaluates xml and returns true if it contains an error
     def has_error?(xml)
       xml =~ /<error>Invalid login/
     end
 
+	# Accepts XML and returns an array of DIA::Result objects
+	# Accepts a class name to serve as the StreamListener as an optional second argument
+	# Returns a populated instance of the passed class 
     def parse(xml, listener_class = DIA_Get_Listener )
       listener = listener_class.new
       parser = REXML::Parsers::StreamParser.new(xml, listener)
@@ -244,13 +238,20 @@ module DemocracyInAction
       listener
     end
 
+	# Accepts XML and returns an array of DIA::Result objects
+	# Works for get requests returning from the service
     def parse_records(xml)
-      parse(xml).items.map {|item| Result.new(item)}
+      parse(xml).result
     end
 
+	# Accepts XML and returns an array of DIA::Result objects
+	# Works for describe requests returning from the service
     def parse_description(xml)
       parse( xml, DIA_Desc_Listener ).result
     end
+
+
+	# Checks for a method being one of the supported tables and returns a TableProxy if it is
     def method_missing(*args) #:nodoc:
       table_name = args.first
       
@@ -260,12 +261,14 @@ module DemocracyInAction
       super *args
     end
 
-    # encodes values for transmission in a POST
-    # copied from private function in Net::HTTP
+    # Encodes values for transmission in a POST.
+    # ( copied from private function in Net::HTTP )
     def urlencode(str)
       str.gsub(/[^a-zA-Z0-9_\.\-]/n) {|s| sprintf('%%%02x', s[0]) }
     end
 
+	# Evaluates an options hash for the presence of a key and returns a hash in the form { :key => value }
+	# if a key is present.  Returns an empty Hash when no key is present.
     def key_param( options = {} )
       return { :key => options } if options && !options.is_a?(Hash)
       
@@ -275,16 +278,19 @@ module DemocracyInAction
       { key_type => key_value }
     end
 
+	# Evaluates an options hash for use with a GET request, returning a valid version for the current service.
     def options_for_get(options={})
       return {} unless options
-      options.merge( key_param(options)).merge where_param( options )
+      options.merge( key_param(options)).merge condition_param( options )
     end
 
-    def where_param( options = {} )
-      conditions = options.delete(:where) || options.delete('where')
-      return options unless conditions
-      return options.merge(:where => conditions) unless conditions.is_a?(Hash)
-      { :where => conditions.inject( [] ) { |memo, (column, value)| memo << "#{column} = '#{value.gsub(/[']/, '\\\\\'')}'" }.join( ' AND ') }
+	# Evaluates an options hash for :condition, returning a valid version.
+	#
+	# Converts an array of conditions into a single string
+    def condition_param( options = {} )
+      return {} unless condition = options.delete(:condition) 
+      return { :condition => condition }  unless condition.is_a?(Hash)
+      { :condition => condition.inject( [] ) { |memo, (column, value)| memo << "#{column}=#{value}" } }
     end
 
     # links are sent in a Hash.
@@ -301,9 +307,10 @@ module DemocracyInAction
       end.flatten
     end
 
-    # helper function for send_request to handle multiple entries
-    # with same key name
-    def build_body(options)
+    # Accepts a Hash of options, returning them as a url-encoded string of key-value pairs.
+    # 
+    # Array values are split into key-value pairs for each element in the array.
+    def build_body(options={})
       # in order to handle multiple links, keys...
       # if an option has an Array as value, append each array element
       # as "<key>=<array element>&"
@@ -315,20 +322,25 @@ module DemocracyInAction
       end.join('&')
     end
 
-    def build_request(url, options) #:nodoc:
+	# Creates a new HTTP::Request object from a passed url and an options hash.
+	#
+	# Adds the authentication values and xml-specifier to the options.
+	# Assigns any cookies being held by the API to the Request.
+	# Appends all options to the request body as a url-encoded string.
+    def build_request(url, options = {}) #:nodoc:
       # make a HTTP post and set the cookies
       request = Net::HTTP::Post.new(url.path)
       cookies.each { |c| request.add_field('Cookie', c) }
       
       # import authentication information
-      options['organization_KEY'] = @orgkey if (@orgkey)
+      options[:organization_KEY] = @orgkey if (@orgkey)
       if (@username && @password)
-        options['user'] = @username
-        options['password'] = @password
+        options[:user] = @username
+        options[:password] = @password
       end
 
       #indicate that xml is the desired response
-      options['xml'] = true
+      options[:xml] = true
 
       #format request body
       request.body = build_body(options)
@@ -337,9 +349,9 @@ module DemocracyInAction
 
     end
 
-    # specialized code to handle multiple form entries with same key name
-    # also does some error handling
-    def send_request(base_url, options)
+	# Sends an HTTP::Request to the base_url. Builds up the request based on the passed options hash.
+	# Returns the body of the response.
+    def send_request(base_url, options={})
       raise NoTableSpecified.new("You must either include :table in the options hash or use the proxy methods API#[tablename].get") unless options[:table]
       return '' if API.disabled?
 
@@ -353,7 +365,7 @@ module DemocracyInAction
       return response.body
     end
 
-    # stores returned cookies to the api and checks for error conditions
+    # Stores returned cookies to the api and checks for error conditions
     def resolve( response )
       # error handling
       #  you see java.lang.Exception if there was an error
@@ -366,7 +378,7 @@ module DemocracyInAction
       response
     end
 
-    # returns any cookies received back from the DIA service
+    # Returns any cookies received back from the DIA service
     def cookies
       @cookies ||= []
     end
@@ -387,7 +399,7 @@ module DemocracyInAction
   #
   # All methods not listed in TABLE_PROXY_METHODS are passed along to the API with their original arguments.
   class TableProxy #:nodoc:
-    TABLE_PROXY_METHODS = [:get, :process, :delete, :columns, :describe, :count, :put, :post ]
+    TABLE_PROXY_METHODS = [:get, :save, :delete, :columns, :count, :put, :post ]
     TABLE_PROXY_METHODS.each { |method| undef_method( method ) if instance_methods.include?( method.to_s ) }
 
     def initialize(api, table_name)

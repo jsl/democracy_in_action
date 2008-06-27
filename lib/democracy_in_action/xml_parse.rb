@@ -14,7 +14,7 @@ module DemocracyInAction
   class DIA_Get_Listener #:nodoc:
     include REXML::StreamListener
 
-    attr_reader :items, :count, :type
+    attr_reader :count, :type
 
     def initialize()
       @items = Array.new
@@ -65,6 +65,10 @@ module DemocracyInAction
         @count = text.to_i
       end
     end
+
+	def result
+    @items.map { |item| Result.new(item) }
+	end
 
   end
 end

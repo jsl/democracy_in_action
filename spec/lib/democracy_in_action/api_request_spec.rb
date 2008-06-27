@@ -78,25 +78,21 @@ describe DemocracyInAction::API do
         @api.should_receive(:key_param).and_return({})
         @api.send(:options_for_get, {} )
       end
-      it "should call where_param" do
-        @api.should_receive(:where_param).and_return({})
+      it "should call condition_param" do
+        @api.should_receive(:condition_param).and_return({})
         @api.send(:options_for_get, {} )
       end
-      describe "a :where parameter with a hash" do
 
-        it "should convert to an 'AND' delimited string" do
-          @api.send(:options_for_get, { :table => 'test', :where => { :Email => 'joe@example.com', :Last_Name => 'Biden' }})[:where].should match(/Last_Name = 'Biden' AND Email = 'joe@example.com'|Email = 'joe@example.com' AND Last_Name = 'Biden'/)
-        end
-
-        it "should escape values with single quotes in them" do
-          #@api.send(:options_for_get, 'test', { :where => { :Email => 'joe@example.com', :Last_Name => "Bi'den" }})[:where].should == "Last_Name = 'Bi\\'den' AND Email = 'joe@example.com'"
-          @api.send(:options_for_get, { :where => { :Email => 'joe@example.com', :Last_Name => "Bi'den" }})[:where].should match(/Last_Name = 'Bi\\\'den' AND Email = 'joe@example.com'|Email = 'joe@example.com' AND Last_Name = 'Bi\\\'den'/)
+      describe "a :condition parameter with a hash" do
+        it "should convert to an array" do
+          @api.send(:options_for_get, { :table => 'test', :condition => { :Email => 'joe@example.com', :Last_Name => 'Biden' }})[:condition].should == [ 'Last_Name=Biden','Email=joe@example.com']
         end
       end
-      describe "a :where parameter with a string" do
+
+      describe "a :condition parameter with a string" do
         it "makes no changes" do
           simple_condition =  "Email = 'joe@example.com' AND Last_Name => 'Biden'"
-          @api.send(:options_for_get, { :where => simple_condition })[:where].should == simple_condition
+          @api.send(:options_for_get, { :condition => simple_condition })[:condition].should == simple_condition
         end
         
       end
@@ -140,7 +136,7 @@ describe DemocracyInAction::API do
         
       end
       it "imports the authentication to the options" do
-        @api.should_receive(:build_body).with(hash_including('user'=>api_arguments[:username],'password' => api_arguments[:password] ))
+        @api.should_receive(:build_body).with(hash_including(:user=>api_arguments[:username],:password => api_arguments[:password] ))
         @api.send(:build_request, URI.parse(@api.urls[:get]), {})
       end
 
@@ -216,11 +212,11 @@ describe DemocracyInAction::API do
 
   describe "RESTful API methods" do
     it "supports POST" do
-      @api.should_receive(:process)
+      @api.should_receive(:save)
       @api.supporter.post
     end
     it "supports PUT" do
-      @api.should_receive(:process)
+      @api.should_receive(:save)
       @api.supporter.put :key => 'test'
     end
 
