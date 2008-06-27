@@ -1,16 +1,11 @@
 require 'rexml/streamlistener'
 #require 'rexml/document'
 
-#include REXML
-
-# this parses out items of name/value pairs well, for example in
-# get...() code.  it doesn't work on descibe() results at all :(
-#
-# it has three accessors when filled in:
-#   items - Array of Hashes, each Hash is one database row
-#   count - the number of database rows that would be returned
-#   type - the data type name in the xml (eg. 'event', 'groups', 'supporter')
-module DemocracyInAction
+module DemocracyInAction #:nodoc:
+  # it has three accessors when filled in:
+  #   items - Array of Hashes, each Hash is one database row
+  #   count - the number of database rows that would be returned
+  #   type - the data type name in the xml (eg. 'event', 'groups', 'supporter')
   class DIA_Get_Listener #:nodoc:
     include REXML::StreamListener
 
