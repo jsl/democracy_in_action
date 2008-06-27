@@ -42,7 +42,7 @@ describe DemocracyInAction::API do
         lambda {DemocracyInAction::API.new( @args.merge({ :urls => { :joe => 'bears' }}) ) }.should raise_error( DemocracyInAction::API::ConnectionInvalid )
       end
       it "raises no error if all required urls are given" do
-        lambda {DemocracyInAction::API.new( @args.merge({ :urls => { :get => 'cares', :process => 'bears', :delete => 'cubs' }}) ) }.should_not raise_error( DemocracyInAction::API::ConnectionInvalid )
+        lambda {DemocracyInAction::API.new( @args.merge({ :urls => { :get => 'cares', :save => 'bears', :delete => 'cubs' }}) ) }.should_not raise_error( DemocracyInAction::API::ConnectionInvalid )
       end
     end
 
@@ -78,7 +78,7 @@ describe DemocracyInAction::API do
     unless @api.connected?
       @api.stub!(:send_request).and_return( fixture_file_read('process.xml'))
     end
-    result = @api.process 'table' => 'supporter', :Email => 'test3@radicaldesigns.org'
+    result = @api.save 'table' => 'supporter', :Email => 'test3@radicaldesigns.org'
     result.should match( /^\d+$/ )
   end
 
@@ -92,9 +92,9 @@ describe DemocracyInAction::API do
       @api.should_receive(:get)
       @api.groups.get
     end
-    it "should call the api process call when calling supporter.process" do
-      @api.should_receive(:process)
-      @api.supporter.process
+    it "should call the api save when calling supporter.save" do
+      @api.should_receive(:save)
+      @api.supporter.save
     end
 
     it "should pass along the table name to the api" do
@@ -110,10 +110,6 @@ describe DemocracyInAction::API do
     it "responds to columns and returns the correct number" do
       @api.stub!(:send_request).and_return(fixture_file_read('supporter_description.xml'))
       @api.supporter.columns.size.should == 56
-    end
-    it "describe returns the same thing as columns" do
-      @api.stub!(:send_request).and_return(fixture_file_read('supporter_description.xml'))
-      @api.supporter.describe.size.should == 56
     end
 
     it "counts the records in the table" do
