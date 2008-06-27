@@ -25,6 +25,8 @@ module DemocracyInAction
     #include DemocracyInAction::Util
     class InvalidKey < ArgumentError #:nodoc:
     end
+    class InvalidData < ArgumentError #:nodoc:
+    end
     class NoTableSpecified < ArgumentError #:nodoc:
     end
     class ConnectionInvalid < ArgumentError #:nodoc:
@@ -145,27 +147,8 @@ module DemocracyInAction
     #
     #           String:  same as { 'key' => String }
     def get(options = {})
-      body = send_request(@urls[:get], process_get_options(options))
+      body = send_request(@urls[:get], options_for_get(options))
       parse_records( body ) unless has_error?( body )
-    end
-
-    def has_error?(xml)
-      xml =~ /<error>Invalid login/
-    end
-
-    def parse(xml, listener_class = DIA_Get_Listener )
-      listener = listener_class.new
-      parser = REXML::Parsers::StreamParser.new(xml, listener)
-      parser.parse
-      listener
-    end
-
-    def parse_records(xml)
-      parse(xml).items.map {|item| Result.new(item)}
-    end
-
-    def parse_description(xml)
-      parse( xml, DIA_Desc_Listener ).result
     end
 
     # options - Hash keys: 'key', 'debug' <br>
@@ -173,7 +156,7 @@ module DemocracyInAction
     #           String: same as { 'key' => String }
     # TODO: document link option???
     def process(options = nil)
-      send_request(@urls[:process], process_process_options( options )).strip
+      send_request(@urls[:process], options.merge(key_param(options))).strip
     end
 
   #create a new record
@@ -199,9 +182,9 @@ module DemocracyInAction
     #            if String, same as { 'key' => String }
     def delete(criteria)
       #table = criteria.delete('table') || criteria.delete(:table)
-      options = process_options(criteria)
-      options.delete('simple')
-      options['xml'] = true
+      options = key_param(criteria)
+      #indicate that xml is the desired response
+      options[:xml] = true
 
       body = send_request(@urls[:delete], criteria)
     
@@ -221,7 +204,7 @@ module DemocracyInAction
     # 
     # Requires a :table
     def columns(options = {}) #:nodoc:
-      body = send_request(@urls[:get], process_get_options(options.merge( 'desc' => true )))
+      body = send_request @urls[:get], options_for_get(options)
       parse_description( body ) unless has_error?(body)
     end
     alias :describe :columns
@@ -232,15 +215,34 @@ module DemocracyInAction
     def count(options = {})
       #get(options.merge('count' => true, 'limit' => 1))
       options[:limit] = 1
-      xml = send_request(@urls[:get], process_get_options(options))
+      xml = send_request(@urls[:get], options_for_get(options))
       parse(xml).count unless has_error?(xml)
     end
     
 
     ###################### INTERNAL CODE ###################
 
-    protected
+    #protected
+    private
 
+    def has_error?(xml)
+      xml =~ /<error>Invalid login/
+    end
+
+    def parse(xml, listener_class = DIA_Get_Listener )
+      listener = listener_class.new
+      parser = REXML::Parsers::StreamParser.new(xml, listener)
+      parser.parse
+      listener
+    end
+
+    def parse_records(xml)
+      parse(xml).items.map {|item| Result.new(item)}
+    end
+
+    def parse_description(xml)
+      parse( xml, DIA_Desc_Listener ).result
+    end
     def method_missing(*args) #:nodoc:
       table_name = args.first
       
@@ -256,61 +258,38 @@ module DemocracyInAction
       str.gsub(/[^a-zA-Z0-9_\.\-]/n) {|s| sprintf('%%%02x', s[0]) }
     end
 
-    # this takes the table name and (possibly nil) options
-    # and returns one hash with them all, handling key processing
-    def process_options(options)
-      # handle no options as well as String representing the key value
-      if (! options) then 
-        options = { }
-      elsif (options.class != Hash)
-        options = { :key => options }
-      end
-
-      # default options
-      # options[:table] = table
-      options[:simple] = true
-
-      return options
+    def key_param( options = {} )
+      return { :key => options } if options && !options.is_a?(Hash)
+      
+      key_type = options[:key] ? :key : 'key'
+      return {} unless key_value = options[key_type]
+      key_value = key_value.join(', ') if key_value.is_a?(Array)
+      { key_type => key_value }
     end
 
-    def process_multiple_keys( options = {} )
-      # if multiple keys (array), join keys with comma
-      # (only for get command)
-      if options['key'] && (options['key'].class == Array) then
-        value = options['key'].join(', ')
-        options['key'] = value  
-      end
-      options
-
+    def options_for_get(options={})
+      return {} unless options
+      options.merge( key_param(options)).merge where_param( options )
     end
 
-    def process_process_options(options={})
-      options = process_options(options)
-      options['link'] = linkHashToQueryStringArray(options['link']) if options['link']
-      options
-    end
-
-    def process_get_options(options={})
-      process_multiple_keys( process_conditions( process_options( options )))
-    end
-
-    def process_conditions( options = {} )
+    def where_param( options = {} )
       conditions = options.delete(:where) || options.delete('where')
       return options unless conditions
       return options.merge(:where => conditions) unless conditions.is_a?(Hash)
-      options.merge( :where => conditions.inject( [] ) { |memo, (column, value)| memo << "#{column} = '#{value.gsub(/[']/, '\\\\\'')}'" }.join( ' AND '))
+      { :where => conditions.inject( [] ) { |memo, (column, value)| memo << "#{column} = '#{value.gsub(/[']/, '\\\\\'')}'" }.join( ' AND ') }
     end
 
     # links are sent in a Hash.
     # every key is a table name
     # value is either key in that table, or Array of keys in that table
     # return an Array of values that can be added to a query string
-    def linkHashToQueryStringArray(links)
-      raise "bad links value" unless links && links.is_a?(Hash)
+    def link_hash_param(links={})
+      return [] unless links
+      raise InvalidData.new("Links should be a hash of the form :link => ( {table => key } or { table => [ key1, key2 ] } )") unless links.is_a?(Hash)
 
       links.inject([]) do |memo, (table, record_key)|
         record_key = [ record_key ] unless record_key.is_a?( Array )
-        memo << record_key.map{ |k| table+'|'+k.to_s }
+        memo << record_key.map{ |k| "link=#{table}&linkKey=#{k}" }
       end.flatten
     end
 
@@ -320,13 +299,15 @@ module DemocracyInAction
       # in order to handle multiple links, keys...
       # if an option has an Array as value, append each array element
       # as "<key>=<array element>&"
-      options.inject([]) do |memo, (key, value)|
+      initial_memo = link_hash_param(options.delete(:link))
+      return initial_memo.join('&') if options.empty?
+      options.inject(initial_memo) do |memo, (key, value)|
         value = [ value ] unless value.is_a?( Array )
         memo << value.map { |v| "#{urlencode(key.to_s)}=#{urlencode(v.to_s)}" }
       end.join('&')
     end
 
-    def build_request(url, options)
+    def build_request(url, options) #:nodoc:
       # make a HTTP post and set the cookies
       request = Net::HTTP::Post.new(url.path)
       cookies.each { |c| request.add_field('Cookie', c) }
@@ -337,6 +318,9 @@ module DemocracyInAction
         options['user'] = @username
         options['password'] = @password
       end
+
+      #indicate that xml is the desired response
+      options['xml'] = true
 
       #format request body
       request.body = build_body(options)
@@ -369,7 +353,7 @@ module DemocracyInAction
 
       # Good, now grab any cookies we can
       if response.get_fields('Set-Cookie')
-        response.get_fields('Set-Cookie').each { |c| self.cookies.push(c.split(';')[0]) }
+        response.get_fields('Set-Cookie').each { |c| cookies.push(c.split(';')[0]) }
       end
       response
     end

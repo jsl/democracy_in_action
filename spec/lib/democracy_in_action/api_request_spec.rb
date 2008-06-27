@@ -54,56 +54,49 @@ describe DemocracyInAction::API do
 
   describe "get" do
 
-    describe "process_options" do
-      it "returns a hash when passed a nil value" do
-        @api.send(:process_options, nil).should be_an_instance_of(Hash)
-      end
-      it "returns a hash with key 'key' when passed a single key" do
-        @api.send(:process_options, 5)[:key].should == 5
-      end
-      it "always specifies the request is simple, so as to receive an xml response" do
-        @api.send(:process_options, nil)[:simple].should == true
-      end
-    end
-
     describe "with multiple keys" do
       it "doesn't change requests without keys" do
         start_hash = { 'test' => 5, "blah" => 2 }
-        @api.send(:process_multiple_keys, start_hash.dup ).should == start_hash
+        @api.send(:key_param, start_hash.dup ).should == {}
       end
       it "doesn't change singular keys" do
-        start_hash = { 'test' => 5, "blah" => 2, 'key' => "scram" }
-        @api.send(:process_multiple_keys, start_hash.dup ).should == start_hash
+        start_hash = { 'test' => 5, "blah" => 2, :key => "scram" }
+        @api.send(:key_param, start_hash.dup ).should == { :key => 'scram' }
       end
       it "changes arrays of keys" do
         start_hash = { 'test' => 5, "blah" => 2, 'key' => [ "scram", 'suckah'] }
-        @api.send(:process_multiple_keys, start_hash.dup ).should_not == start_hash
+        @api.send(:key_param, start_hash.dup ).should_not == start_hash
       end
       it "changes arrays of keys to comma-delimited strings" do
         start_hash = { 'test' => 5, "blah" => 2, 'key' => [ "scram", 'suckah'] }
-        @api.send(:process_multiple_keys, start_hash.dup )['key'].should == "scram, suckah"
+        @api.send(:key_param, start_hash.dup )['key'].should == "scram, suckah"
       end
     end
 
-    describe "with process_get_options" do
-      it "should return a hash with table and simple" do
-        @api.send(:process_get_options, nil ).keys.should include( :simple )
+    describe "with options_for_get" do
+      it "should call key_param" do
+        @api.should_receive(:key_param).and_return({})
+        @api.send(:options_for_get, {} )
+      end
+      it "should call where_param" do
+        @api.should_receive(:where_param).and_return({})
+        @api.send(:options_for_get, {} )
       end
       describe "a :where parameter with a hash" do
 
         it "should convert to an 'AND' delimited string" do
-          @api.send(:process_get_options, { :table => 'test', :where => { :Email => 'joe@example.com', :Last_Name => 'Biden' }})[:where].should match(/Last_Name = 'Biden' AND Email = 'joe@example.com'|Email = 'joe@example.com' AND Last_Name = 'Biden'/)
+          @api.send(:options_for_get, { :table => 'test', :where => { :Email => 'joe@example.com', :Last_Name => 'Biden' }})[:where].should match(/Last_Name = 'Biden' AND Email = 'joe@example.com'|Email = 'joe@example.com' AND Last_Name = 'Biden'/)
         end
 
         it "should escape values with single quotes in them" do
-          #@api.send(:process_get_options, 'test', { :where => { :Email => 'joe@example.com', :Last_Name => "Bi'den" }})[:where].should == "Last_Name = 'Bi\\'den' AND Email = 'joe@example.com'"
-          @api.send(:process_get_options, { :where => { :Email => 'joe@example.com', :Last_Name => "Bi'den" }})[:where].should match(/Last_Name = 'Bi\\\'den' AND Email = 'joe@example.com'|Email = 'joe@example.com' AND Last_Name = 'Bi\\\'den'/)
+          #@api.send(:options_for_get, 'test', { :where => { :Email => 'joe@example.com', :Last_Name => "Bi'den" }})[:where].should == "Last_Name = 'Bi\\'den' AND Email = 'joe@example.com'"
+          @api.send(:options_for_get, { :where => { :Email => 'joe@example.com', :Last_Name => "Bi'den" }})[:where].should match(/Last_Name = 'Bi\\\'den' AND Email = 'joe@example.com'|Email = 'joe@example.com' AND Last_Name = 'Bi\\\'den'/)
         end
       end
       describe "a :where parameter with a string" do
         it "makes no changes" do
           simple_condition =  "Email = 'joe@example.com' AND Last_Name => 'Biden'"
-          @api.send(:process_get_options, { :where => simple_condition })[:where].should == simple_condition
+          @api.send(:options_for_get, { :where => simple_condition })[:where].should == simple_condition
         end
         
       end
@@ -113,26 +106,29 @@ describe DemocracyInAction::API do
 
   describe "process" do
     describe "link hash" do
-      it "raises an error unless it is passed a hash" do
-        lambda{ @api.send :linkHashToQueryStringArray, "blech" }.should raise_error
+      it "raises an empty array unless it is passed a hash" do
+        lambda{ @api.send(:link_hash_param, "blech")}.should raise_error(DemocracyInAction::API::InvalidData)
       end
-      it "returns an array" do
-        @api.send(:linkHashToQueryStringArray, {} ).should be_an_instance_of(Array)
+      it "returns a hash" do
+        @api.send(:link_hash_param, {} ).should be_an_instance_of(Array)
       end
       it "returns an array with the key and value pairs joined" do
-        @api.send(:linkHashToQueryStringArray, { 'test' => '5'} ).first.should == 'test|5'
+        @api.send(:link_hash_param, { 'test' => '5'} ).join('&').should == 'link=test&linkKey=5'
       end
       it "returns an array with the key and value pairs joined, and value arrays processed with the keys duplicated" do
-        @api.send(:linkHashToQueryStringArray, { 'test' => [5, 6, 7]} ).should == [ 'test|5','test|6','test|7']
+        @api.send(:link_hash_param, { 'test' => [5, 6, 7] } ).should == [ 'link=test&linkKey=5','link=test&linkKey=6','link=test&linkKey=7']
       end
       it "handles multiple table names" do
-        @api.send(:linkHashToQueryStringArray, { 'fail' => [72,19], 'test' => [5, 6, 7] } ).should == [ 'fail|72', 'fail|19', 'test|5','test|6','test|7' ]
+        @api.send(:link_hash_param, { 'fail' => [72,19], 'test' => [5, 6, 7] } ).should == [ 'link=fail&linkKey=72', 'link=fail&linkKey=19', 'link=test&linkKey=5','link=test&linkKey=6','link=test&linkKey=7' ]
+      end
+      it "gets the right stuff back after build body" do
+        @api.send(:build_body, :link => { 'test' => [5, 6, 7]} ).should ==  'link=test&linkKey=5&link=test&linkKey=6&link=test&linkKey=7'
       end
     end
     describe "process_process_options" do
       it "should call process options to process the options" do
-        @api.should_receive(:process_options).with({"hello" => "i love you"}).and_return({})
-        @api.send(:process_process_options, {"hello" => "i love you"})
+        @api.should_receive(:link_hash_param).with({"hello" => "i love you"}).and_return([])
+        @api.send(:build_body, { :link => {"hello" => "i love you"}})
       end
     end
   end
