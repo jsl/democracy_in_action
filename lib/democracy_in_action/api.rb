@@ -3,6 +3,12 @@ module DemocracyInAction
     #include DemocracyInAction::Util
 
     DOMAINS = { 
+      :sandbox => {
+        :authenticate   => 'https://sandbox.democracyinaction.org/api/authenticate.sjs',
+        :get            => 'http://salsa.democracyinaction.org/dia/api/get.jsp',
+        :process        => 'http://salsa.democracyinaction.org/dia/api/process.jsp',
+        :delete         => 'http://salsa.democracyinaction.org/dia/deleteEntry.jsp'
+        },
       :salsa => { 
         :authenticate   => 'https://salsa.democracyinaction.org/api/authenticate.sjs',
         :get            => 'http://salsa.democracyinaction.org/dia/api/get.jsp',
@@ -76,6 +82,15 @@ module DemocracyInAction
 
     def authenticated?
       @authenticated
+    end
+
+    # i imagine this will get refactored into the new version of send_request, and that authenticate will use that
+    def make_https_request(url)
+      url = URI.parse(url)
+      https = Net::HTTP.new(url.host, url.port)
+      https.use_ssl = true
+      https.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      response = https.get(url.request_uri, 'Cookie' => cookies.join(';')) #can also use Net::HTTP::Get
     end
 
     # There are a lot of functions that take the same variable names..
