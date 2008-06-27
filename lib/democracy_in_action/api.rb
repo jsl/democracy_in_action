@@ -364,6 +364,15 @@ module DemocracyInAction
       @cookies ||= []
     end
 
+    def authenticated_response?(response)
+      response['set-cookie'].nil? || (response['set-cookie'] =~ /JSESSIONID=/).nil?
+    end
+
+    def unauthenticated_response?(response)
+      !authenticated_response?(response)
+    end
+
+    class InvalidKey < ArgumentError; end
   end
 
   # This class acts as a placeholder for DIA tables.  It automatically includes

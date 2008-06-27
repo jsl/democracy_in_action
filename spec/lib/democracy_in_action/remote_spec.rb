@@ -99,120 +99,159 @@ describe "DIA Service" do
 
     describe "getCount" do
       describe "when not authenticated" do
+        before do
+          @r = @unauthed.make_https_request('https://sandbox.democracyinaction.org/api/getCount.sjs?object=supporter')
+        end
         it "should have error message" do
-          r = @unauthed.make_https_request('https://sandbox.democracyinaction.org/api/getCount.sjs?object=supporter')
-          r.body.should =~ /<data organization_KEY="-1">/
+          @r.body.should =~ /<data organization_KEY="-1">/
         end
         it "should set a session cookie" do
-          r = @unauthed.make_https_request('https://sandbox.democracyinaction.org/api/getCount.sjs?object=supporter')
-          r['set-cookie'].should_not be_nil
+          @r['set-cookie'].should =~ /JSESSIONID=/
+        end
+        it "should be an unauthenticated response" do
+          @api.__send__(:unauthenticated_response?, @r).should be_true
         end
       end
       describe "when authenticated" do
+        before do
+          @r = @authed.make_https_request('https://sandbox.democracyinaction.org/api/getCount.sjs?object=supporter')
+        end
         it "should have a success message" do
-          r = @authed.make_https_request('https://sandbox.democracyinaction.org/api/getCount.sjs?object=supporter')
-          r.body.should =~ /<data organization_KEY="#{@orgkey}">/
+          @r.body.should =~ /<data organization_KEY="#{@orgkey}">/
         end
         it "should set an org token cookie" do
-          r = @authed.make_https_request('https://sandbox.democracyinaction.org/api/getCount.sjs?object=supporter&xml=1')
-          r['set-cookie'].should be_nil
+          @r['set-cookie'].should be_nil
+        end
+        it "should not be unauthenticated_response" do
+          @api.__send__(:unauthenticated_response?, @r).should be_false
         end
       end
     end
 
     describe "getCounts" do
       describe "when not authenticated" do
+        before do
+          @r = @unauthed.make_https_request('https://sandbox.democracyinaction.org/api/getCounts.sjs?object=supporter&groupBy=Email')
+        end
         it "should have error message" do
-          r = @unauthed.make_https_request('https://sandbox.democracyinaction.org/api/getCounts.sjs?object=supporter&groupBy=Email')
-          r.body.should =~ /<data organization_KEY="-1">/
+          @r.body.should =~ /<data organization_KEY="-1">/
         end
         it "should set a session cookie" do
-          r = @unauthed.make_https_request('https://sandbox.democracyinaction.org/api/getCounts.sjs?object=supporter')
-          r['set-cookie'].should_not be_nil
+          @r['set-cookie'].should =~ /JSESSIONID=/
+        end
+        it "should be an unauthenticated response" do
+          @api.__send__(:unauthenticated_response?, @r).should be_true
         end
       end
       describe "when authenticated" do
+        before do
+          @r = @authed.make_https_request('https://sandbox.democracyinaction.org/api/getCounts.sjs?object=supporter&groupBy=Email')
+        end
         it "should have a success message" do
-          r = @authed.make_https_request('https://sandbox.democracyinaction.org/api/getCounts.sjs?object=supporter&groupBy=Email')
-          r.body.should =~ /<data organization_KEY="#{@orgkey}">/
+          @r.body.should =~ /<data organization_KEY="#{@orgkey}">/
         end
         it "should set an org token cookie" do
-          r = @authed.make_https_request('https://sandbox.democracyinaction.org/api/getCounts.sjs?object=supporter')
-          r['set-cookie'].should be_nil
+          @r['set-cookie'].should be_nil
+        end
+        it "should not be unauthenticated_response" do
+          @api.__send__(:unauthenticated_response?, @r).should be_false
         end
       end
     end
 
     describe "getObject" do
       describe "when not authenticated" do
+        before do
+          @r = @unauthed.make_https_request('https://sandbox.democracyinaction.org/api/getObject.sjs?object=supporter&key=-1')
+        end
         it "should set a cookie" do
-          r = @unauthed.make_https_request('https://sandbox.democracyinaction.org/api/getObject.sjs?object=supporter&key=-1')
-          r['set-cookie'].should_not be_nil
+          @r['set-cookie'].should =~ /JSESSIONID=/
         end
         it "should have organization_KEY undefined" do
-          r = @unauthed.make_https_request('https://sandbox.democracyinaction.org/api/getObject.sjs?object=supporter&key=-1')
-          r.body.should =~ /<data organization_KEY="undefined">/
+          @r.body.should =~ /<data organization_KEY="undefined">/
+        end
+        it "should be an unauthenticated response" do
+          @api.__send__(:unauthenticated_response?, @r).should be_true
         end
       end
       describe "when authenticated" do
+        before do
+          @r = @authed.make_https_request('https://sandbox.democracyinaction.org/api/getObject.sjs?object=supporter&key=-1')
+        end
         it "should not set a cookie" do
-          r = @authed.make_https_request('https://sandbox.democracyinaction.org/api/getObject.sjs?object=supporter&key=-1')
-          r['set-cookie'].should be_nil
+          @r['set-cookie'].should be_nil
         end
         it "should ALSO have organization_KEY undefined if we don't have access" do
-          r = @api.make_https_request('https://sandbox.democracyinaction.org/api/getObject.sjs?object=supporter&key=-1')
-          r.body.should =~ /<data organization_KEY="undefined">/
+          @r.body.should =~ /<data organization_KEY="undefined">/
+        end
+        it "should not be unauthenticated_response" do
+          @api.__send__(:unauthenticated_response?, @r).should be_false
         end
       end
     end
 
     describe "getObjects" do
       describe "when not authenticated" do
+        before do
+          @r = @unauthed.make_https_request('https://sandbox.democracyinaction.org/api/getObjects.sjs?object=supporter&limit=0')
+        end
         it "should have organization_KEY == -1" do
-          r = @unauthed.make_https_request('https://sandbox.democracyinaction.org/api/getObjects.sjs?object=supporter&limit=0')
-          r.body.should =~ /<data organization_KEY="-1">/
+          @r.body.should =~ /<data organization_KEY="-1">/
         end
         it "should set a cookie" do
-          r = @unauthed.make_https_request('https://sandbox.democracyinaction.org/api/getObjects.sjs?object=supporter&limit=0')
-          r['set-cookie'].should_not be_nil
+          @r['set-cookie'].should =~ /JSESSIONID=/
+        end
+        it "should be an unauthenticated response" do
+          @api.__send__(:unauthenticated_response?, @r).should be_true
         end
       end
       describe "when authenticated" do
+        before do
+          @r = @authed.make_https_request('https://sandbox.democracyinaction.org/api/getObjects.sjs?object=supporter&limit=0')
+        end
         it "should have organization_KEY == your organization key" do
-          r = @authed.make_https_request('https://sandbox.democracyinaction.org/api/getObjects.sjs?object=supporter&limit=0')
-          r.body.should =~ /<data organization_KEY="#{@orgkey}">/
+          @r.body.should =~ /<data organization_KEY="#{@orgkey}">/
         end
         it "should NOT set a cookie" do
-          r = @authed.make_https_request('https://sandbox.democracyinaction.org/api/getObjects.sjs?object=supporter&limit=0')
-          r['set-cookie'].should be_nil
+          @r['set-cookie'].should be_nil
+        end
+        it "should not be unauthenticated_response" do
+          @api.__send__(:unauthenticated_response?, @r).should be_false
         end
       end
     end
 
     describe "save" do
       describe "when not authenticated" do
+        before do
+          @r = @unauthed.make_https_request('https://sandbox.democracyinaction.org/save?xml&object=supporter&Email=rd_test@email.com')
+        end
         it "should have error message" do
-          r = @unauthed.make_https_request('https://sandbox.democracyinaction.org/save?xml&object=supporter&Email=rd_test@email.com')
-          r.body.should =~ /<error object="supporter"/ 
+          @r.body.should =~ /<error object="supporter"/ 
         end
         it "should not set org token cookie" do
-          r = @unauthed.make_https_request('https://sandbox.democracyinaction.org/save?xml&object=supporter&Email=rd_test@email.com')
-          r['set-cookie'].should_not =~ /org\d+token/ 
+          @r['set-cookie'].should_not =~ /org\d+token/ 
         end
         it "should set a session cookie" do
-          r = @unauthed.make_https_request('https://sandbox.democracyinaction.org/save?xml&object=supporter&Email=rd_test@email.com')
-          r['set-cookie'].should_not be_nil
+          @r['set-cookie'].should =~ /JSESSIONID=/
+        end
+        it "should be an unauthenticated response" do
+          @api.__send__(:unauthenticated_response?, @r).should be_true
         end
       end
       describe "when authenticated" do
+        before do
+          @r = @authed.make_https_request('https://sandbox.democracyinaction.org/save?xml&object=supporter&Email=rd_test@email.com')
+        end
         it "should have a success message" do
-          r = @authed.make_https_request('https://sandbox.democracyinaction.org/save?xml&object=supporter&Email=rd_test@email.com')
-          r.body.should =~ /<success object="supporter"/ 
+          @r.body.should =~ /<success object="supporter"/ 
         end
         it "should set an org token cookie" do
-          r = @authed.make_https_request('https://sandbox.democracyinaction.org/save?xml&object=supporter&Email=rd_test@email.com')
-          r['set-cookie'].should =~ /org74token/
-          # set-cookie expires date is one month from now
+          @r['set-cookie'].should =~ /org74token/
+        end
+        # set-cookie expires date is one month from now
+        it "should not be unauthenticated_response" do
+          @api.__send__(:unauthenticated_response?, @r).should be_false
         end
       end
     end
@@ -223,23 +262,31 @@ describe "DIA Service" do
         @key = r.body[/key="(\d+)"/,1]
       end
       describe "when not authenticated" do
+        before do
+          @r = @unauthed.make_https_request("https://sandbox.democracyinaction.org/delete?object=supporter&xml=1&key=#{@key}")
+        end
         it "should have error message" do
-          r = @unauthed.make_https_request("https://sandbox.democracyinaction.org/delete?object=supporter&xml=1&key=#{@key}")
-          r.body.should match(/error table="supporter/ )
+          @r.body.should match(/error table="supporter/ )
         end
         it "should set a session cookie" do
-          r = @unauthed.make_https_request("https://sandbox.democracyinaction.org/delete?object=supporter&xml=1&key=#{@key}")
-          r['set-cookie'].should_not be_nil
+          @r['set-cookie'].should_not be_nil
+        end
+        it "should be an unauthenticated response" do
+          @api.__send__(:unauthenticated_response?, @r).should be_true
         end
       end
       describe "when authenticated" do
+        before do
+          @r = @authed.make_https_request("https://sandbox.democracyinaction.org/delete?object=supporter&key=#{@key}&xml=1")
+        end
         it "should have a success message" do
-          r = @authed.make_https_request("https://sandbox.democracyinaction.org/delete?object=supporter&key=#{@key}&xml=1")
-          r.body.should match( %r-<success table="supporter- )
+          @r.body.should match( %r-<success table="supporter- )
         end
         it "should set an org token cookie" do
-          r = @authed.make_https_request("https://sandbox.democracyinaction.org/delete?object=supporter&key=#{@key}&xml=1")
-          r['set-cookie'].should be_nil
+          @r['set-cookie'].should be_nil
+        end
+        it "should not be unauthenticated_response" do
+          @api.__send__(:unauthenticated_response?, @r).should be_false
         end
       end
     end
