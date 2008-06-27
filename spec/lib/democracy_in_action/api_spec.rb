@@ -7,7 +7,6 @@ describe DemocracyInAction::API do
 
   it "knows when it is connected" do
     api = DemocracyInAction::API.new( working_api_arguments )
-    $DEBUG=1
     api.should be_connected
   end
   it "it is not connected when passed bad arguments" do

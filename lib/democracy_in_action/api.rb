@@ -174,10 +174,15 @@ module DemocracyInAction
     # Confirm that the API is enabled and the remote service is reachable
     def connected?
       begin
-        API.disabled? || !(@username && @password && @orgkey && @node && get( :object => 'supporter', 'desc' => 1 )).nil?
+        return @authenticated || authenticate 
       rescue SocketError #means the library cannot reach the DIA server at all, or no internet is available
         false
       end
+=begin
+        API.disabled? || !(@username && @password && @orgkey && @node && get( :object => 'supporter', 'desc' => 1 )).nil?
+      rescue SocketError #means the library cannot reach the DIA server at all, or no internet is available
+        false
+=end
     end
 
     # Prevent the API from contacting the remote service.  Used for development and testing purposes.
@@ -270,7 +275,7 @@ module DemocracyInAction
     #
     # Additional options are attributes which should be set on the record
     def save(options = nil)
-      send_request(@urls[:save], options.merge(key_param(options))).strip
+      send_request(@urls[:save], options.merge(param_key(options))).strip
     end
 
     # Create a new record
@@ -300,7 +305,7 @@ module DemocracyInAction
     #
     # Returns true if it works, nil otherwise.
     def delete(*args)
-      options = key_param(key)
+      options = param_key(key)
       body = send_request(@urls[:delete], options)
     
       # if it contains '<success', it worked, otherwise a failure
@@ -351,27 +356,23 @@ module DemocracyInAction
       listener
     end
 
-    # Checks for a method being one of the supported objects and returns a TableProxy if it is
-    def method_missing(*args) #:nodoc:
-      table_name = args.first
-      
-      if Tables.list.include?(table_name)
-        return TableProxy.new(self, table_name)
-      end
-      super *args
-    end
-
     # Encodes values for transmission in a POST.
     # ( copied from private function in Net::HTTP )
     def urlencode(str)
       str.gsub(/[^a-zA-Z0-9_\.\-]/n) {|s| sprintf('%%%02x', s[0]) }
     end
 
+    # Evaluates an options hash for use with a GET request, returning a valid version for the current service.
+    def options_for_get(options={})
+      return {} unless options
+      options.merge( param_key(options)).merge param_condition( options )
+    end
+
     # Evaluates an options hash for the presence of a key and returns a hash in the form { :key => value }
     # if a key is present.  
     #
     # Returns an empty Hash when no key is present.
-    def key_param( options = {} )
+    def param_key( options = {} )
       return { :key => options } if options && !options.is_a?(Hash)
       
       key_type = options[:key] ? :key : 'key'
@@ -380,18 +381,12 @@ module DemocracyInAction
       { key_type => key_value }
     end
 
-    # Evaluates an options hash for use with a GET request, returning a valid version for the current service.
-    def options_for_get(options={})
-      return {} unless options
-      options.merge( key_param(options)).merge condition_param( options )
-    end
-
     # Evaluates an options hash for :condition, returning a valid version.
     #
     # Converts a hash of conditions into a single string
     #
     # Returns an empty hash if no :condition is found in the param, otherwise returns a hash { :condition => value }
-    def condition_param( options = {} )
+    def param_condition( options = {} )
       return {} unless condition = options.delete(:condition) 
       return { :condition => condition }  unless condition.is_a?(Hash)
       { :condition => condition.inject( [] ) { |memo, (column, value)| memo << "#{column}=#{value}" } }
@@ -402,7 +397,7 @@ module DemocracyInAction
     # Every key is a object name, with values that are single or multiple records in that table.
     #
     # Returns an empty array if no :link parameter is passed, otherwise returns an array of query param strings.
-    def link_hash_param(links={})
+    def param_link_hash(links={})
       return [] unless links
       raise InvalidData.new("Links should be a hash of the form :link => ( {object => key } or { object => [ key1, key2 ] } )") unless links.is_a?(Hash)
 
@@ -416,7 +411,7 @@ module DemocracyInAction
     # 
     # Array values have their keys duplicated, creating key-value pairs for each element in the array.
     def build_body(options={})
-      initial_memo = link_hash_param(options.delete(:link))
+      initial_memo = param_link_hash(options.delete(:link))
       return initial_memo.join('&') if options.empty?
       options.inject(initial_memo) do |memo, (key, value)|
         value = [ value ] unless value.is_a?( Array )
@@ -466,13 +461,13 @@ module DemocracyInAction
       puts request.body if $DEBUG
 
       # get result
-      response = resolve( Net::HTTP.new(url.host, url.port).start { |http| http.request(request) } )
+      response = resolve_request( Net::HTTP.new(url.host, url.port).start { |http| http.request(request) } )
 
       return response.body
     end
 
     # Stores returned cookies to the api and checks for error conditions
-    def resolve( response )
+    def resolve_request( response )
       # error handling
       #  you see java.lang.Exception if there was an error
       return ( response.error! and response ) unless response.is_a?( Net::HTTPSuccess )
@@ -484,7 +479,7 @@ module DemocracyInAction
       response
     end
 
-    # Returns any cookies received back from the DIA service
+    # Returns any cookies received from the service
     def cookies
       @cookies ||= []
     end
@@ -497,7 +492,16 @@ module DemocracyInAction
       !authenticated_response?(response)
     end
 
-    class InvalidKey < ArgumentError; end
+    # Checks for a method being one of the supported objects and returns a TableProxy if it is
+    def method_missing(*args) #:nodoc:
+      table_name = args.first
+      
+      if Tables.list.include?(table_name)
+        return TableProxy.new(self, table_name)
+      end
+      super *args
+    end
+
   end
 
   # This class acts as a placeholder for DIA objects.  It automatically includes

@@ -57,29 +57,29 @@ describe DemocracyInAction::API do
     describe "with multiple keys" do
       it "doesn't change requests without keys" do
         start_hash = { 'test' => 5, "blah" => 2 }
-        @api.send(:key_param, start_hash.dup ).should == {}
+        @api.send(:param_key, start_hash.dup ).should == {}
       end
       it "doesn't change singular keys" do
         start_hash = { 'test' => 5, "blah" => 2, :key => "scram" }
-        @api.send(:key_param, start_hash.dup ).should == { :key => 'scram' }
+        @api.send(:param_key, start_hash.dup ).should == { :key => 'scram' }
       end
       it "changes arrays of keys" do
         start_hash = { 'test' => 5, "blah" => 2, 'key' => [ "scram", 'suckah'] }
-        @api.send(:key_param, start_hash.dup ).should_not == start_hash
+        @api.send(:param_key, start_hash.dup ).should_not == start_hash
       end
       it "changes arrays of keys to comma-delimited strings" do
         start_hash = { 'test' => 5, "blah" => 2, 'key' => [ "scram", 'suckah'] }
-        @api.send(:key_param, start_hash.dup )['key'].should == "scram, suckah"
+        @api.send(:param_key, start_hash.dup )['key'].should == "scram, suckah"
       end
     end
 
     describe "with options_for_get" do
-      it "should call key_param" do
-        @api.should_receive(:key_param).and_return({})
+      it "should call param_key" do
+        @api.should_receive(:param_key).and_return({})
         @api.send(:options_for_get, {} )
       end
-      it "should call condition_param" do
-        @api.should_receive(:condition_param).and_return({})
+      it "should call param_condition" do
+        @api.should_receive(:param_condition).and_return({})
         @api.send(:options_for_get, {} )
       end
 
@@ -103,19 +103,19 @@ describe DemocracyInAction::API do
   describe "process" do
     describe "link hash" do
       it "raises an empty array unless it is passed a hash" do
-        lambda{ @api.send(:link_hash_param, "blech")}.should raise_error(DemocracyInAction::API::InvalidData)
+        lambda{ @api.send(:param_link_hash, "blech")}.should raise_error(DemocracyInAction::API::InvalidData)
       end
       it "returns a hash" do
-        @api.send(:link_hash_param, {} ).should be_an_instance_of(Array)
+        @api.send(:param_link_hash, {} ).should be_an_instance_of(Array)
       end
       it "returns an array with the key and value pairs joined" do
-        @api.send(:link_hash_param, { 'test' => '5'} ).join('&').should == 'link=test&linkKey=5'
+        @api.send(:param_link_hash, { 'test' => '5'} ).join('&').should == 'link=test&linkKey=5'
       end
       it "returns an array with the key and value pairs joined, and value arrays processed with the keys duplicated" do
-        @api.send(:link_hash_param, { 'test' => [5, 6, 7] } ).should == [ 'link=test&linkKey=5','link=test&linkKey=6','link=test&linkKey=7']
+        @api.send(:param_link_hash, { 'test' => [5, 6, 7] } ).should == [ 'link=test&linkKey=5','link=test&linkKey=6','link=test&linkKey=7']
       end
       it "handles multiple table names" do
-        @api.send(:link_hash_param, { 'fail' => [72,19], 'test' => [5, 6, 7] } ).should == [ 'link=fail&linkKey=72', 'link=fail&linkKey=19', 'link=test&linkKey=5','link=test&linkKey=6','link=test&linkKey=7' ]
+        @api.send(:param_link_hash, { 'fail' => [72,19], 'test' => [5, 6, 7] } ).should == [ 'link=fail&linkKey=72', 'link=fail&linkKey=19', 'link=test&linkKey=5','link=test&linkKey=6','link=test&linkKey=7' ]
       end
       it "gets the right stuff back after build body" do
         @api.send(:build_body, :link => { 'test' => [5, 6, 7]} ).should ==  'link=test&linkKey=5&link=test&linkKey=6&link=test&linkKey=7'
@@ -123,7 +123,7 @@ describe DemocracyInAction::API do
     end
     describe "process_process_options" do
       it "should call process options to process the options" do
-        @api.should_receive(:link_hash_param).with({"hello" => "i love you"}).and_return([])
+        @api.should_receive(:param_link_hash).with({"hello" => "i love you"}).and_return([])
         @api.send(:build_body, { :link => {"hello" => "i love you"}})
       end
     end
@@ -173,7 +173,7 @@ describe DemocracyInAction::API do
         end
         it "is resolved" do
           @net_req.stub!(:start).and_return(@net_req)
-          @api.should_receive(:resolve).with(@net_req).and_return( @net_req )
+          @api.should_receive(:resolve_request).with(@net_req).and_return( @net_req )
           @api.send(:send_request, @api.urls[:get], { :object => 'cheese' })
         end
       end
@@ -182,7 +182,7 @@ describe DemocracyInAction::API do
         it "calls error on the response unless the response is a success" do
           req = nil
           req.should_receive(:error!)
-          @api.send :resolve, req 
+          @api.send :resolve_request, req 
         end
 
 
@@ -194,16 +194,16 @@ describe DemocracyInAction::API do
 
           it "does not call error on a success" do
             @req.should_not_receive(:error!)
-            @api.send :resolve, @req 
+            @api.send :resolve_request, @req 
           end
 
           it "extracts cookies from the response" do
             @req.stub!(:get_fields).and_return([ 'blah', 'blue', 'blunder' ] )
-            @api.send :resolve, @req 
+            @api.send :resolve_request, @req 
             @api.send(:cookies).should == [ 'blah', 'blue', 'blunder' ]
           end
           it "returns the first argument" do
-            @api.send( :resolve, @req  ).should == @req
+            @api.send( :resolve_request, @req  ).should == @req
           end
         end
       end
