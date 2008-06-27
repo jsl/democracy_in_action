@@ -32,6 +32,7 @@ module DemocracyInAction
     class ConnectionInvalid < ArgumentError #:nodoc:
     end
 
+  # A list of known DIA nodes and their associated urls
     NODES = { 
       :sandbox => {
         :authenticate   => 'https://sandbox.democracyinaction.org/api/authenticate.sjs',
@@ -81,8 +82,8 @@ module DemocracyInAction
       raise ConnectionInvalid.new("Urls must include at least :get, :process, and :delete") unless @urls[:get] and @urls[:process] and @urls[:delete]
     end
 
-  # confirms that the API is enabled and the Democracy in Action service node is reachable
-  # returns a boolean
+    # confirms that the API is enabled and the Democracy in Action service node is reachable
+    # returns a boolean
     def connected?
       begin
         API.disabled? || !(@username && @password && @orgkey && @node && get( :table => 'supporter', 'desc' => 1 )).nil?
@@ -101,6 +102,7 @@ module DemocracyInAction
       @@disabled ||= false
     end
 
+    # Connect to the service and check the current credentials
     def authenticate
       response = authentication_request
       if !authentication_failed?(response) && response['set-cookie']
@@ -139,39 +141,44 @@ module DemocracyInAction
 
 
 
-    # gets an "XML" document with the table info
-    # if options['count'], returns integer (number of matches)
-    # if options['desc'], returns TableDesc instance
-    # else, returns Array of Hashes, each Hash is one database row 
-    #
-    # options - Hash keys: 'key', 'column', 'order', 'limit', 'where', 'desc' 
-    #
-    #           String:  same as { 'key' => String }
+    # Return one or more records from the service
+    #   :table - required option
+    # Also supports
+    #   :where
+    #   :limit
+    #   :order
+    #   :key
     def get(options = {})
       body = send_request(@urls[:get], options_for_get(options))
       parse_records( body ) unless has_error?( body )
     end
 
-    # options - Hash keys: 'key', 'debug' <br>
+    # Writes data to the service
+    #   :table - required option
+    # Supports fieldnames to be written, passed as symbols
+    # Also supports
+    #   :key, or [table name]_KEY - identifies the record to write
+    #   :Email will also identify a record in the Supporter table
+    #   :link - a hash for linking new records to objects already on the service
     #
-    #           String: same as { 'key' => String }
-    # TODO: document link option???
+    # Links should be passed in the form
+    #   options = { :link => { :[table name] => id, :[second table name] }}
     def process(options = nil)
       send_request(@urls[:process], options.merge(key_param(options))).strip
     end
 
-  #create a new record
-  def post( options = {})
-    process( options ) 
-  end
+    #create a new record
+    def post( options = {})
+      process( options ) 
+    end
 
-  #update an existing record
-  def put( options = {} )
-    required_keys = [ :key, 'key', options[:table] + '_KEY', ( options[:table] + '_KEY').to_sym ]
-    required_keys += [ 'Email', :Email ] if options[:table] == 'supporter' || options[:table] == :supporter
-    raise InvalidKey.new( "You must specify :key, :Email, or #{options[:table]}_KEY to update a record" ) unless options.any? { |optkey, value| required_keys.include?(optkey) }
-    process( options ) 
-  end
+    #update an existing record
+    def put( options = {} )
+      required_keys = [ :key, 'key', options[:table] + '_KEY', ( options[:table] + '_KEY').to_sym ]
+      required_keys += [ 'Email', :Email ] if options[:table] == 'supporter' || options[:table] == :supporter
+      raise InvalidKey.new( "You must specify :key, :Email, or #{options[:table]}_KEY to update a record" ) unless options.any? { |optkey, value| required_keys.include?(optkey) }
+      process( options ) 
+    end
 
     # delete code
     # returns true if it works, false otherwise
