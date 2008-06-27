@@ -85,7 +85,7 @@ describe DemocracyInAction::API do
 
       describe "a :condition parameter with a hash" do
         it "should convert to an array" do
-          @api.send(:options_for_get, { :table => 'test', :condition => { :Email => 'joe@example.com', :Last_Name => 'Biden' }})[:condition].should == [ 'Last_Name=Biden','Email=joe@example.com']
+          ( @api.send(:options_for_get, { :object => 'test', :condition => { :Email => 'joe@example.com', :Last_Name => 'Biden' }})[:condition] - [ 'Last_Name=Biden','Email=joe@example.com']).should be_empty
         end
       end
 
@@ -169,12 +169,12 @@ describe DemocracyInAction::API do
         end
         it "is sent" do
           @net_req.should_receive(:start).and_return( @net_req )
-          @api.send(:send_request, @api.urls[:get], { :table => 'cheese' })
+          @api.send(:send_request, @api.urls[:get], { :object => 'cheese' })
         end
         it "is resolved" do
           @net_req.stub!(:start).and_return(@net_req)
           @api.should_receive(:resolve).with(@net_req).and_return( @net_req )
-          @api.send(:send_request, @api.urls[:get], { :table => 'cheese' })
+          @api.send(:send_request, @api.urls[:get], { :object => 'cheese' })
         end
       end
 

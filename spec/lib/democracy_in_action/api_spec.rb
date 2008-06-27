@@ -7,6 +7,7 @@ describe DemocracyInAction::API do
 
   it "knows when it is connected" do
     api = DemocracyInAction::API.new( working_api_arguments )
+    $DEBUG=1
     api.should be_connected
   end
   it "it is not connected when passed bad arguments" do
@@ -53,7 +54,7 @@ describe DemocracyInAction::API do
       @api.stub!(:send_request).and_return( fixture_file_read('supporter_by_limit_1.xml'))
     end
 
-    result = @api.get(:table => 'supporter', 'limit' => 1).first
+    result = @api.get(:object => 'supporter', 'limit' => 1).first
     result['key'].should match( /^\d+$/ )
     result['Email'].should_not be_nil
   end
@@ -98,7 +99,7 @@ describe DemocracyInAction::API do
     end
 
     it "should pass along the table name to the api" do
-      @api.should_receive(:get).with(hash_including(:table => 'supporter'))
+      @api.should_receive(:get).with(hash_including(:object => 'supporter'))
       @api.supporter.get
     end
   
@@ -121,10 +122,10 @@ describe DemocracyInAction::API do
   describe "count method" do
     it "counts the records in the table" do
       @api.stub!(:send_request).and_return(fixture_file_read('supporter_by_limit_1.xml'))
-      @api.count(:table => 'supporter').should == 11466 
+      @api.count(:object => 'supporter').should == 11466 
     end
     it "forwards the options to the get method" do
-      start_args = { :table => 'supporter' }
+      start_args = { :object => 'supporter' }
       @api.should_receive(:send_request).with( @api.urls[:get], hash_including( start_args )).and_return( fixture_file_read('supporter_by_limit_1.xml'))
       @api.supporter.count
     end
@@ -133,7 +134,7 @@ describe DemocracyInAction::API do
   describe "columns method" do
     it "should return a description of the given table" do
       @api.stub!(:send_request).and_return(fixture_file_read('supporter_description.xml'))
-      @api.columns(:table => 'supporter').size.should == 56
+      @api.columns(:object => 'supporter').size.should == 56
     end
   end
 end

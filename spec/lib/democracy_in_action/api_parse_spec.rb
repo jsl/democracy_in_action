@@ -19,7 +19,7 @@ describe "DemocracyInAction::API Parser" do
         @supporter = fixture_file_read('supporter.xml')
       end
       it "should have a first name" do
-        @api.send(:parse_records, @supporter).first['First_Name'].should == 'test1'
+        @api.send(:parse, @supporter).result.first['First_Name'].should == 'test1'
       end
     end
     describe "an event record" do
@@ -27,15 +27,15 @@ describe "DemocracyInAction::API Parser" do
         @event = fixture_file_read('event.xml')
       end
       it "should have an event name" do
-        @api.send(:parse_records, @event).first['Event_Name'].should == 'Salsa Lessons Webinar:  Mar. 23, 2:00 p.m.'
+        @api.send(:parse, @event).result.first['Event_Name'].should == 'Salsa Lessons Webinar:  Mar. 23, 2:00 p.m.'
       end
       it "should have some email trigger keys" do
-        @api.send(:parse_records, @event).first['event$email_trigger_KEYS'].should == '0,436'
+        @api.send(:parse, @event).result.first['event$email_trigger_KEYS'].should == '0,436'
       end
     end
     it "returns an array of records" do
       @supporters = fixture_file_read('supporters.xml')
-      @api.send(:parse_records, @supporters).size.should == 2
+      @api.send(:parse, @supporters).result.size.should == 2
     end
   end
   describe "parsing a table description" do
@@ -44,7 +44,7 @@ describe "DemocracyInAction::API Parser" do
 
     end
     it "reads the table description" do
-      @api.send(:parse_description, @desc)[:supporter_KEY].key.should == 'PRI'
+      @api.send(:parse, @desc, DemocracyInAction::DIA_Desc_Listener).result[:supporter_KEY].key.should == 'PRI'
     end
   end
 
