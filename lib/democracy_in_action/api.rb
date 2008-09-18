@@ -216,7 +216,8 @@ module DemocracyInAction
     end
 
     def authentication_failed?(response)
-      response['location'] =~ /login/ 
+      response.body =~ /Invalid login/
+      # response.body !~ /Successful Login/
     end
 
     def authenticated?
@@ -486,6 +487,7 @@ module DemocracyInAction
 
     def authenticated_response?(response)
       response['set-cookie'].nil? || (response['set-cookie'] =~ /JSESSIONID=/).nil?
+      #response.body !~ /Invalid login/
     end
 
     def unauthenticated_response?(response)

@@ -16,13 +16,14 @@ describe "DIA Service" do
           @api = DemocracyInAction::API.new( api_arguments ) 
           @response = @api.authentication_request
         end
-        it "should return 302" do
-          @response.code.should == "302"
+        it "should return 200" do
+          @response.code.should == "200"
         end
-        it "should have an empty body" do
-          @response.body.should be_empty
+        it "should have an error message" do
+          @response.body.should match(/Invalid login/)
         end
         it "should redirect to login" do
+           pending
           @response['location'].should =~ /login.jsp/
         end
         it "should set cookie expires to the beginning of time" do
@@ -53,18 +54,11 @@ describe "DIA Service" do
           @api = DemocracyInAction::API.new( working_api_arguments )
           @response = @api.authentication_request
         end
-        it "should return 302" do
-          @response.code.should == "302"
+        it "should return 200" do
+          @response.code.should == "200"
         end
-        it "should have an empty body" do
-          @response.body.should be_empty
-        end
-        #NOTE: this is the only difference between success and failure
-        it "should not redirect to login" do
-          @response['location'].should_not =~ /login/
-        end
-        it "should redirect to hq" do
-          @response['location'].should =~ /hq/
+        it "should have show success message" do
+          @response.body.should =~ /Successful Login/
         end
         it "should set cookie expires to the beginning of time" do
           cookies = @response['set-cookie'].split('; ')
