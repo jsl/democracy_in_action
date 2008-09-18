@@ -7,7 +7,7 @@ module DemocracyInAction
                        'delete' => 'http://api.democracyinaction.org/dia/api/delete.jsp'
     }
 
-    attr_reader :user, :password, :orgkey
+    attr_accessor :user, :password, :orgkey
     attr_reader :urls
 
     # options...  (default: above urls, no auth)
