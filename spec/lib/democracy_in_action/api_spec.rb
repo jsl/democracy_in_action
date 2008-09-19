@@ -79,9 +79,9 @@ describe DemocracyInAction::API do
 
   it "sends data to DIA for processing" do
     unless @api.connected?
-      @api.stub!(:send_request).and_return( fixture_file_read('process.xml'))
+      @api.stub!(:send_request).and_return( fixture_file_read('save.xml'))
     end
-    result = @api.save 'table' => 'supporter', :Email => 'test3@radicaldesigns.org'
+    result = @api.save 'object' => 'supporter', :Email => 'test3@radicaldesigns.org'
     result.should match( /^\d+$/ )
   end
 
