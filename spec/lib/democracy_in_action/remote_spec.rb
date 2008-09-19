@@ -14,21 +14,18 @@ describe "DIA Service" do
       describe "authentication_request" do
         before do
           @api = DemocracyInAction::API.new( api_arguments ) 
-          @response = @api.authentication_request
+          @api.authenticate rescue DemocracyInAction::API::ConnectionInvalid
+          @response = @api.auth_response
         end
         it "should return 200" do
-          @response.code.should == "200"
+          @response.status.should == 200
         end
         it "should have an error message" do
-          @response.body.should match(/Invalid login/)
+          @response.content.should match(/Invalid login/)
         end
         it "should redirect to login" do
            pending
           @response['location'].should =~ /login.jsp/
-        end
-        it "should set cookie expires to the beginning of time" do
-          cookies = @response['set-cookie'].split('; ')
-          cookies.detect {|c| c =~ /Expires=Thu, 01-Jan-1970/}.should_not be_nil
         end
       end
       describe "authenticate" do
@@ -36,10 +33,10 @@ describe "DIA Service" do
           @api = DemocracyInAction::API.new( api_arguments ) 
         end
         it "should return false" do
-          @api.authenticate.should be_false
+          lambda { @api.authenticate }.should raise_error
         end
         it "should return false in authenticated?" do
-          @api.authenticate
+          @api.authenticate rescue DemocracyInAction::API::ConnectionInvalid
           @api.authenticated?.should be_false
         end
         it "should raise an error" do
@@ -52,17 +49,14 @@ describe "DIA Service" do
       describe "authentication_request" do
         before do
           @api = DemocracyInAction::API.new( working_api_arguments )
-          @response = @api.authentication_request
+          @api.authenticate
+          @response = @api.auth_response
         end
         it "should return 200" do
-          @response.code.should == "200"
+          @response.status.should == 200
         end
         it "should have show success message" do
-          @response.body.should =~ /Successful Login/
-        end
-        it "should set cookie expires to the beginning of time" do
-          cookies = @response['set-cookie'].split('; ')
-          cookies.detect {|c| c =~ /Expires=Thu, 01-Jan-1970/}.should_not be_nil
+          @response.content.should =~ /Successful Login/
         end
       end
       describe "authenticate" do
@@ -70,7 +64,10 @@ describe "DIA Service" do
           @api = DemocracyInAction::API.new( working_api_arguments )
         end
         it "should return true" do
-          @api.authenticate.should be_true
+          @api.authenticate.should_not be_nil
+        end
+        it "should not raise error" do
+          lambda { @api.authenticate }.should_not raise_error
         end
         it "should return true in authenticated?" do
           @api.authenticate
@@ -83,7 +80,10 @@ describe "DIA Service" do
   describe "responses" do
     before do
       @unauthed = DemocracyInAction::API.new( api_arguments )
-      @unauthed.authenticate
+      begin
+        @unauthed.authenticate
+      rescue DemocracyInAction::API::ConnectionInvalid
+      end
 
       @authed = DemocracyInAction::API.new( working_api_arguments )
       @authed.authenticate
@@ -93,30 +93,18 @@ describe "DIA Service" do
     describe "getCount" do
       describe "when not authenticated" do
         before do
-          @r = @unauthed.make_https_request('https://sandbox.democracyinaction.org/api/getCount.sjs?object=supporter')
+          @r = @unauthed.send(:client).get('https://sandbox.democracyinaction.org/api/getCount.sjs?object=supporter')
         end
         it "should have error message" do
-          @r.body.should =~ /<data organization_KEY="-1">/
-        end
-        it "should set a session cookie" do
-          @r['set-cookie'].should =~ /JSESSIONID=/
-        end
-        it "should be an unauthenticated response" do
-          @api.__send__(:unauthenticated_response?, @r).should be_true
+          @r.body.content.should =~ /<data organization_KEY="-1">/
         end
       end
       describe "when authenticated" do
         before do
-          @r = @authed.make_https_request('https://sandbox.democracyinaction.org/api/getCount.sjs?object=supporter')
+          @r = @authed.send(:client).get('https://sandbox.democracyinaction.org/api/getCount.sjs?object=supporter')
         end
         it "should have a success message" do
-          @r.body.should =~ /<data organization_KEY="#{@orgkey}">/
-        end
-        it "should set an org token cookie" do
-          @r['set-cookie'].should be_nil
-        end
-        it "should not be unauthenticated_response" do
-          @api.__send__(:unauthenticated_response?, @r).should be_false
+          @r.body.content.should =~ /<data organization_KEY="#{@orgkey}">/
         end
       end
     end
@@ -124,30 +112,18 @@ describe "DIA Service" do
     describe "getCounts" do
       describe "when not authenticated" do
         before do
-          @r = @unauthed.make_https_request('https://sandbox.democracyinaction.org/api/getCounts.sjs?object=supporter&groupBy=Email')
+          @r = @unauthed.send(:client).get('https://sandbox.democracyinaction.org/api/getCounts.sjs?object=supporter&groupBy=Email')
         end
         it "should have error message" do
-          @r.body.should =~ /<data organization_KEY="-1">/
-        end
-        it "should set a session cookie" do
-          @r['set-cookie'].should =~ /JSESSIONID=/
-        end
-        it "should be an unauthenticated response" do
-          @api.__send__(:unauthenticated_response?, @r).should be_true
+          @r.body.content.should =~ /<data organization_KEY="-1">/
         end
       end
       describe "when authenticated" do
         before do
-          @r = @authed.make_https_request('https://sandbox.democracyinaction.org/api/getCounts.sjs?object=supporter&groupBy=Email')
+          @r = @authed.send(:client).get('https://sandbox.democracyinaction.org/api/getCounts.sjs?object=supporter&groupBy=Email')
         end
         it "should have a success message" do
-          @r.body.should =~ /<data organization_KEY="#{@orgkey}">/
-        end
-        it "should set an org token cookie" do
-          @r['set-cookie'].should be_nil
-        end
-        it "should not be unauthenticated_response" do
-          @api.__send__(:unauthenticated_response?, @r).should be_false
+          @r.body.content.should =~ /<data organization_KEY="#{@orgkey}">/
         end
       end
     end
@@ -155,30 +131,18 @@ describe "DIA Service" do
     describe "getObject" do
       describe "when not authenticated" do
         before do
-          @r = @unauthed.make_https_request('https://sandbox.democracyinaction.org/api/getObject.sjs?object=supporter&key=-1')
-        end
-        it "should set a cookie" do
-          @r['set-cookie'].should =~ /JSESSIONID=/
+          @r = @unauthed.send(:client).get('https://sandbox.democracyinaction.org/api/getObject.sjs?object=supporter&key=-1')
         end
         it "should have organization_KEY undefined" do
-          @r.body.should =~ /<data organization_KEY="undefined">/
-        end
-        it "should be an unauthenticated response" do
-          @api.__send__(:unauthenticated_response?, @r).should be_true
+          @r.body.content.should =~ /<data organization_KEY="undefined">/
         end
       end
       describe "when authenticated" do
         before do
-          @r = @authed.make_https_request('https://sandbox.democracyinaction.org/api/getObject.sjs?object=supporter&key=-1')
-        end
-        it "should not set a cookie" do
-          @r['set-cookie'].should be_nil
+          @r = @authed.send(:client).get('https://sandbox.democracyinaction.org/api/getObject.sjs?object=supporter&key=-1')
         end
         it "should ALSO have organization_KEY undefined if we don't have access" do
-          @r.body.should =~ /<data organization_KEY="undefined">/
-        end
-        it "should not be unauthenticated_response" do
-          @api.__send__(:unauthenticated_response?, @r).should be_false
+          @r.body.content.should =~ /<data organization_KEY="undefined">/
         end
       end
     end
@@ -186,30 +150,18 @@ describe "DIA Service" do
     describe "getObjects" do
       describe "when not authenticated" do
         before do
-          @r = @unauthed.make_https_request('https://sandbox.democracyinaction.org/api/getObjects.sjs?object=supporter&limit=0')
+          @r = @unauthed.send(:client).get('https://sandbox.democracyinaction.org/api/getObjects.sjs?object=supporter&limit=0')
         end
         it "should have organization_KEY == -1" do
-          @r.body.should =~ /<data organization_KEY="-1">/
-        end
-        it "should set a cookie" do
-          @r['set-cookie'].should =~ /JSESSIONID=/
-        end
-        it "should be an unauthenticated response" do
-          @api.__send__(:unauthenticated_response?, @r).should be_true
+          @r.body.content.should =~ /<data organization_KEY="-1">/
         end
       end
       describe "when authenticated" do
         before do
-          @r = @authed.make_https_request('https://sandbox.democracyinaction.org/api/getObjects.sjs?object=supporter&limit=0')
+          @r = @authed.send(:client).get('https://sandbox.democracyinaction.org/api/getObjects.sjs?object=supporter&limit=0')
         end
         it "should have organization_KEY == your organization key" do
-          @r.body.should =~ /<data organization_KEY="#{@orgkey}">/
-        end
-        it "should NOT set a cookie" do
-          @r['set-cookie'].should be_nil
-        end
-        it "should not be unauthenticated_response" do
-          @api.__send__(:unauthenticated_response?, @r).should be_false
+          @r.body.content.should =~ /<data organization_KEY="#{@orgkey}">/
         end
       end
     end
@@ -217,69 +169,41 @@ describe "DIA Service" do
     describe "save" do
       describe "when not authenticated" do
         before do
-          @r = @unauthed.make_https_request('https://sandbox.democracyinaction.org/save?xml&object=supporter&Email=rd_test@email.com')
+          @r = @unauthed.send(:client).get('https://sandbox.democracyinaction.org/save?xml&object=supporter&Email=rd_test@email.com')
         end
         it "should have error message" do
-          @r.body.should =~ /<error object="supporter"/ 
-        end
-        it "should not set org token cookie" do
-          @r['set-cookie'].should_not =~ /org\d+token/ 
-        end
-        it "should set a session cookie" do
-          @r['set-cookie'].should =~ /JSESSIONID=/
-        end
-        it "should be an unauthenticated response" do
-          @api.__send__(:unauthenticated_response?, @r).should be_true
+          @r.body.content.should =~ /<error object="supporter"/ 
         end
       end
       describe "when authenticated" do
         before do
-          @r = @authed.make_https_request('https://sandbox.democracyinaction.org/save?xml&object=supporter&Email=rd_test@email.com')
+          @r = @authed.send(:client).get('https://sandbox.democracyinaction.org/save?xml&object=supporter&Email=rd_test@email.com')
         end
         it "should have a success message" do
-          @r.body.should =~ /<success object="supporter"/ 
-        end
-        it "should set an org token cookie" do
-          @r['set-cookie'].should =~ /org74token/
-        end
-        # set-cookie expires date is one month from now
-        it "should not be unauthenticated_response" do
-          @api.__send__(:unauthenticated_response?, @r).should be_false
+          @r.body.content.should =~ /<success object="supporter"/ 
         end
       end
     end
 
     describe "delete" do
       before do
-        r = @authed.make_https_request('https://sandbox.democracyinaction.org/save?object=supporter&Email=cool2@example.org&xml=true')
-        @key = r.body[/key="(\d+)"/,1]
+        r = @authed.send(:client).get('https://sandbox.democracyinaction.org/save?object=supporter&Email=cool2@example.org&xml=true')
+        @key = r.body.content[/key="(\d+)"/,1]
       end
       describe "when not authenticated" do
         before do
-          @r = @unauthed.make_https_request("https://sandbox.democracyinaction.org/delete?object=supporter&xml=1&key=#{@key}")
+          @r = @unauthed.send(:client).get("https://sandbox.democracyinaction.org/delete?object=supporter&xml=1&key=#{@key}")
         end
         it "should have error message" do
-          @r.body.should match(/error table="supporter/ )
-        end
-        it "should set a session cookie" do
-          @r['set-cookie'].should_not be_nil
-        end
-        it "should be an unauthenticated response" do
-          @api.__send__(:unauthenticated_response?, @r).should be_true
+          @r.body.content.should match(/error table="supporter/ )
         end
       end
       describe "when authenticated" do
         before do
-          @r = @authed.make_https_request("https://sandbox.democracyinaction.org/delete?object=supporter&key=#{@key}&xml=1")
+          @r = @authed.send(:client).get("https://sandbox.democracyinaction.org/delete?object=supporter&key=#{@key}&xml=1")
         end
         it "should have a success message" do
-          @r.body.should match( %r-<success table="supporter- )
-        end
-        it "should set an org token cookie" do
-          @r['set-cookie'].should be_nil
-        end
-        it "should not be unauthenticated_response" do
-          @api.__send__(:unauthenticated_response?, @r).should be_false
+          @r.body.content.should match( %r-<success table="supporter- )
         end
       end
     end

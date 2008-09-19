@@ -1,11 +1,12 @@
 $:.unshift(File.dirname(__FILE__)) unless
   $:.include?(File.dirname(__FILE__)) || $:.include?(File.expand_path(File.dirname(__FILE__)))
 
-%w(net/http net/https).each { |f| require f }
+#%w(net/http net/https).each { |f| require f }
+require 'rubygems'
+require 'httpclient'
 
 require 'democracy_in_action/version'
 require 'democracy_in_action/util'
-require 'democracy_in_action/config_rexml'
 require 'democracy_in_action/xml_parse'
 require 'democracy_in_action/desc_parse'
 require 'democracy_in_action/tables'

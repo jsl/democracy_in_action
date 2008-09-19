@@ -7,12 +7,12 @@ module DemocracyInAction
   # 
   # Most actions can be accomplished via the REST methods ( get, post, put, and delete ).  
   #   @api.get    :object => 'groups', :condition => { :Group_Name => 'Peaceful Warriors' }
-  #   @api.post   :object => 'graups', :Group_Name => 'Grannies Against the Surge'
+  #   @api.post   :object => 'groups', :Group_Name => 'Grannies Against the Surge'
   #   @api.put    :object => 'groups', :Group_Name => 'Grannies Against McSame', :key => 234 # requires a key
   #   @api.delete :object => 'groups', :key => 234
   #
   # To retrieve a count of records, use the :count method:
-  #   @api.count :object => 'graups, :condition => "Group Name LIKE '%Grannies%'"
+  #   @api.count :object => 'groups', :condition => "Group Name LIKE '%Grannies%'"
   #
   # To save a record that may or may not already exist, use :post or :save
   #   @api.save   :object => 'supporter', :Email => 'jesus@example.org', :First_Name => 'Jesus', :Last_Name => 'Murphy'
@@ -117,7 +117,7 @@ module DemocracyInAction
     NODES = { 
       :sandbox => {
         :authenticate   => 'https://sandbox.democracyinaction.org/api/authenticate.sjs',
-        :get            => 'https://sandbox.democracyinaction.org/api/get',
+        :get            => 'https://sandbox.democracyinaction.org/api/getObjects.sjs',
         :save           => 'https://sandbox.democracyinaction.org/api/save',
         :delete     => 'https://sandbox.democracyinaction.org/api/delete',
         :count      => 'https://sandbox.democracyinaction.org/getCount.sjs',
@@ -144,26 +144,23 @@ module DemocracyInAction
     attr_reader :username
     # The password used to login to your Democracy in Action account.
     attr_reader :password
-    # orgkey is your account identifier on the service 
-    # - check the URL when you are logged in if you are unsure of this value.
-    attr_reader :orgkey
     # node is a short key representing DIA servers that are known to the library ( see NODES )
     attr_reader :node
     # For new nodes or custom scripts you may wish to specify a hash of custom urls
     attr_reader :urls
 
-    # Requires an options hash containing: :username, :password, :orgkey, and :node
+    # Requires an options hash containing: :username, :password, and :node
     #   
     # :node can be skipped if :urls hash is included instead.
     #
     # If a :urls hash is used, it should have the form:
     #   :urls => { :get => "get_url", :save => "save_url", :delete => "delete_url" }
     def initialize(options = {})
-      unless options && options[:username] && options[:password] && options[:orgkey] && ( options[:node] || options[:urls] ) || self.class.disabled?
-        raise ConnectionInvalid.new("Must specify :username, :password, :orgkey, and ( :node or :url )")
+      unless options && options[:username] && options[:password] && ( options[:node] || options[:urls] ) || self.class.disabled?
+        raise ConnectionInvalid.new("Must specify :username, :password, and ( :node or :url )")
       end 
 
-      @username, @password, @orgkey, @node = options.delete(:username), options.delete(:password), options.delete(:orgkey), options.delete(:node)
+      @username, @password, @node = options.delete(:username), options.delete(:password), options.delete(:node)
 
       @urls = options[:urls] || NODES[@node]
       raise ConnectionInvalid.new("Requested node is not supported.  Use (#{NODES.keys.join(', ')}) or specify a custom array in :urls") unless @urls
@@ -175,14 +172,9 @@ module DemocracyInAction
     def connected?
       begin
         return @authenticated || authenticate 
-      rescue SocketError #means the library cannot reach the DIA server at all, or no internet is available
+      rescue SocketError, ConnectionInvalid #means the library cannot reach the DIA server at all, or no internet is available
         false
       end
-=begin
-        API.disabled? || !(@username && @password && @orgkey && @node && get( :object => 'supporter', 'desc' => 1 )).nil?
-      rescue SocketError #means the library cannot reach the DIA server at all, or no internet is available
-        false
-=end
     end
 
     # Prevent the API from contacting the remote service.  Used for development and testing purposes.
@@ -195,44 +187,20 @@ module DemocracyInAction
       @@disabled ||= false
     end
 
+    attr_reader :auth_response
+
     # Connect to the service and check the current credentials
     def authenticate
-      response = authentication_request
-      if !authentication_failed?(response) && response['set-cookie']
-        response['set-cookie'].each { |c| cookies.push(c.split(';')[0]) }
-        @authenticated = true
-      else
-        @authenticated = false
-#        raise ConnectionInvalid if authentication_failed?(response)
-      end
-    end
-
-    def authentication_request
-      url = URI.parse(@urls[:authenticate])
-      https = Net::HTTP.new(url.host, url.port)
-      https.use_ssl = true
-      https.verify_mode = OpenSSL::SSL::VERIFY_NONE
-      https.post(url.path, "email=#{username}&password=#{password}")
-    end
-
-    def authentication_failed?(response)
-      response.body =~ /Invalid login/
-      # response.body !~ /Successful Login/
+      @client = HTTPClient.new
+      @auth_response = @client.post(@urls[:authenticate],"email=#{username}&password=#{password}")
+      raise ConnectionInvalid if @auth_response.body.content =~ /Invalid login/
+      @authenticated = true
+      @client
     end
 
     def authenticated?
-      @authenticated
+      !@authenticated.nil?
     end
-
-    # i imagine this will get refactored into the new version of send_request, and that authenticate will use that
-    def make_https_request(url)
-      url = URI.parse(url)
-      https = Net::HTTP.new(url.host, url.port)
-      https.use_ssl = true
-      https.verify_mode = OpenSSL::SSL::VERIFY_NONE
-      response = https.get(url.request_uri, 'Cookie' => cookies.join(';')) #can also use Net::HTTP::Get
-    end
-
 
     # A raw request.  Requires the symbol for the url to hit ( ie :save, :get ) and a hash of options to be appended to the query string.
     def request( url_symbol, options = {} )
@@ -427,26 +395,18 @@ module DemocracyInAction
     # Assigns any cookies being held by the API to the Request.
     #
     # Appends all options to the request body as a url-encoded string.
-    def build_request(url, options = {}) #:nodoc:
-      # make a HTTP post and set the cookies
-      request = Net::HTTP::Post.new(url.path)
-      cookies.each { |c| request.add_field('Cookie', c) }
-      
+    def build_request(options = {}) #:nodoc:
       # import authentication information
-      options[:organization_KEY] = @orgkey if (@orgkey)
       if (@username && @password)
         options[:user] = @username
         options[:password] = @password
       end
 
       #indicate that xml is the desired response
-      options[:xml] = true
       options[:object] ||= options.delete(:table)
 
       #format request body
-      request.body = build_body(options)
-      request.set_content_type('application/x-www-form-urlencoded')
-      request
+      build_body(options)
 
     end
 
@@ -458,40 +418,13 @@ module DemocracyInAction
       return '' if API.disabled?
 
       url = URI.parse(base_url) 
-      request = build_request(url, options)
-      puts request.body if $DEBUG
 
-      # get result
-      response = resolve_request( Net::HTTP.new(url.host, url.port).start { |http| http.request(request) } )
-
-      return response.body
+      response = client.get(url, build_request(options))
+      return response.body.content
     end
 
-    # Stores returned cookies to the api and checks for error conditions
-    def resolve_request( response )
-      # error handling
-      #  you see java.lang.Exception if there was an error
-      return ( response.error! and response ) unless response.is_a?( Net::HTTPSuccess )
-
-      # Good, now grab any cookies we can
-      if response.get_fields('Set-Cookie')
-        response.get_fields('Set-Cookie').each { |c| cookies.push(c.split(';')[0]) }
-      end
-      response
-    end
-
-    # Returns any cookies received from the service
-    def cookies
-      @cookies ||= []
-    end
-
-    def authenticated_response?(response)
-      response['set-cookie'].nil? || (response['set-cookie'] =~ /JSESSIONID=/).nil?
-      #response.body !~ /Invalid login/
-    end
-
-    def unauthenticated_response?(response)
-      !authenticated_response?(response)
+    def client
+      @client || authenticate
     end
 
     # Checks for a method being one of the supported objects and returns a TableProxy if it is
