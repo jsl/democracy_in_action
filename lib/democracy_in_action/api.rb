@@ -285,8 +285,7 @@ module DemocracyInAction
     #
     # Allows a :condition to restrict the result set.
     def count(options = {})
-      options[:limit] = 1
-      xml = send_request(@urls[:get], options_for_get(options))
+      xml = send_request(@urls[:count], options_for_get(options))
       parse(xml).count unless has_error?(xml)
     end
     

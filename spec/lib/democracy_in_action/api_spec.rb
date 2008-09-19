@@ -113,19 +113,19 @@ describe DemocracyInAction::API do
     end
 
     it "counts the records in the table" do
-      @api.stub!(:send_request).and_return(fixture_file_read('supporter_by_limit_1.xml'))
-      @api.supporter.count.should == 11466 
+      @api.stub!(:send_request).and_return(fixture_file_read('supporter_count.xml'))
+      @api.supporter.count.should == 10
     end
   end
 
   describe "count method" do
     it "counts the records in the table" do
-      @api.stub!(:send_request).and_return(fixture_file_read('supporter_by_limit_1.xml'))
-      @api.count(:object => 'supporter').should == 11466 
+      @api.stub!(:send_request).and_return(fixture_file_read('supporter_count.xml'))
+      @api.count(:object => 'supporter').should == 10
     end
     it "forwards the options to the get method" do
       start_args = { :object => 'supporter' }
-      @api.should_receive(:send_request).with( @api.urls[:get], hash_including( start_args )).and_return( fixture_file_read('supporter_by_limit_1.xml'))
+      @api.should_receive(:send_request).with( @api.urls[:count], hash_including( start_args )).and_return( fixture_file_read('supporter_count.xml'))
       @api.supporter.count
     end
   end
