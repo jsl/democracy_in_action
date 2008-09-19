@@ -1,6 +1,6 @@
 = democracy_in_action
 
-* http://github.com/sethwalker/democracy_in_action
+* http://github.com/radicaldesigns/democracy_in_action
 
 == DESCRIPTION:
 
@@ -12,10 +12,10 @@ A collection of tools for storing and retrieving data in your Democracy in Actio
 ===Examples:
 
 Creating a connection to Democracy in Action:
-  @dia = DemocracyInAction::API.new( :username => 'bob@example.org', :password => 'secret', :domain => :salsa, :orgkey => 911 )
+  @dia = DemocracyInAction::API.new( :email => 'bob@example.org', :password => 'secret', :node => :salsa )
 
 Retrieving a list of groups in your account, and getting all their names:
-  @dia.groups.get.map{ |g| g.Group_Name }
+  @dia.groups.get.map { |g| g.Group_Name }
 
 View a list of tables available in Democracy In Action:
   puts DemocracyInAction::Tables::TABLES
@@ -42,7 +42,7 @@ Ruby v1.8.6
 
 == INSTALL:
 
-sudo gem install sethwalker-democracy_in_action -s http://gems.github.com
+sudo gem install radicaldesigns-democracy_in_action -s http://gems.github.com
 
 == LICENSE:
 

@@ -117,10 +117,11 @@ module DemocracyInAction
     NODES = { 
       :sandbox => {
         :authenticate   => 'https://sandbox.democracyinaction.org/api/authenticate.sjs',
+        :get_by_key     => 'https://sandbox.democracyinaction.org/api/getObject.sjs',
         :get            => 'https://sandbox.democracyinaction.org/api/getObjects.sjs',
-        :save           => 'https://sandbox.democracyinaction.org/api/save',
-        :delete     => 'https://sandbox.democracyinaction.org/api/delete',
-        :count      => 'https://sandbox.democracyinaction.org/getCount.sjs',
+        :save           => 'https://sandbox.democracyinaction.org/save',
+        :delete         => 'https://sandbox.democracyinaction.org/api/delete',
+        :count          => 'https://sandbox.democracyinaction.org/getCount.sjs',
         },
       :salsa => { 
         :authenticate   => 'https://salsa.democracyinaction.org/api/authenticate.sjs',
@@ -226,9 +227,18 @@ module DemocracyInAction
     #   :orderBy - a string in the form of an SQL ORDER BY clause, representing the desired sorting pattern of the result set
     #   :key - an integer representing the id of the desired result
     def get(options = {})
-      body = send_request(@urls[:get], options_for_get(options))
-      parse(body).result unless has_error?( body )
+      validate_connection
+      url = options[:key] ? urls[:get_by_key] : urls[:get]
+      body = send_request(url, options_for_get(options))
+      unless has_error?( body )
+        if options[:key]
+          parse(body).result.first
+        else
+          parse(body).result
+        end
+      end
     end
+
     alias :all :get
 
     # Returns only the first result in a result set.  
@@ -249,8 +259,9 @@ module DemocracyInAction
     #   options = { :link => { :[object name] => key, :[second object name] => key }}
     #
     # Additional options are attributes which should be set on the record
-    def save(options = nil)
-      send_request(@urls[:save], options.merge(param_key(options))).strip
+    def save(options = {})
+      options[:xml] = true
+      send_request(@urls[:save], options.merge(param_key(options))).strip[/key="(\d+)/, 1]
     end
 
     # Create a new record
