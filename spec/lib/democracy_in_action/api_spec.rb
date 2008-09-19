@@ -3,6 +3,7 @@ require File.dirname(__FILE__) + '/../../spec_helper'
 describe DemocracyInAction::API do
   before do
     @api = DemocracyInAction::API.new( api_arguments )
+    @api.validate_connection
   end
 
   it "knows when it is connected" do
@@ -14,10 +15,7 @@ describe DemocracyInAction::API do
     api.should_not be_connected
   end
 
-  describe "initialize" do
-    it "should raise an error if username, password, orgkey, or node is not specified" do
-      lambda{DemocracyInAction::API.new({})}.should raise_error
-    end
+  describe "validate" do
     api_arguments.each do |key, value| 
       it "sets attribute #{key} to equal the passed value" do
         @api.send(key).should == value
@@ -26,11 +24,14 @@ describe DemocracyInAction::API do
 
     it "assigns urls based on the passed node" do
       @api = DemocracyInAction::API.new( api_arguments ) 
+      @api.validate_connection
       @api.urls.should == DemocracyInAction::API::NODES[api_arguments[:node]]
     end
 
     it "raises an error if an unsupported node is passed" do
-      lambda {DemocracyInAction::API.new( api_arguments.merge({ :node => :joe }) ) }.should raise_error
+      @api.node = :joe
+      @api.urls = nil
+      lambda { @api.validate_connection }.should raise_error
     end
 
     describe "accepts custom urls in place of a node" do
@@ -39,7 +40,9 @@ describe DemocracyInAction::API do
         @args.delete(:node)
       end
       it "raises an error if the urls are bad" do
-        lambda {DemocracyInAction::API.new( @args.merge({ :urls => { :joe => 'bears' }}) ) }.should raise_error( DemocracyInAction::API::ConnectionInvalid )
+        @api.urls = {:joe => 'bears'}
+        @api.node = nil
+        lambda {@api.validate_connection}.should raise_error( DemocracyInAction::API::ConnectionInvalid )
       end
       it "raises no error if all required urls are given" do
         lambda {DemocracyInAction::API.new( @args.merge({ :urls => { :get => 'cares', :save => 'bears', :delete => 'cubs' }}) ) }.should_not raise_error( DemocracyInAction::API::ConnectionInvalid )

@@ -9,15 +9,15 @@ describe DemocracyInAction::API do
   describe "build_body" do
     it "should convert key value pair into string" do
       body = @api.send(:build_body, {"key" => "123456"})
-      body.should == "key=123456"
+      body.should =~ /key=123456/
     end
     it "should convert multiple key value pairs into string" do
       body = @api.send(:build_body, {"key" => "123456", "email" => "test@domain.org"})
-      body.should == "key=123456&email=test%40domain.org"
+      body.should =~ /key=123456&email=test%40domain.org/
     end
     it "should convert key value pairs that contain arrays into string" do
       body = @api.send(:build_body, {"key" => "123456", "names" => ["austin", "patrice", "seth"]})
-      body.should == "names=austin&names=patrice&names=seth&key=123456"
+      body.should =~ /names=austin&names=patrice&names=seth&key=123456/
     end
   end
 
@@ -108,7 +108,7 @@ describe DemocracyInAction::API do
         @api.send(:param_link_hash, { 'fail' => [72,19], 'test' => [5, 6, 7] } ).should == [ 'link=fail&linkKey=72', 'link=fail&linkKey=19', 'link=test&linkKey=5','link=test&linkKey=6','link=test&linkKey=7' ]
       end
       it "gets the right stuff back after build body" do
-        @api.send(:build_body, :link => { 'test' => [5, 6, 7]} ).should ==  'link=test&linkKey=5&link=test&linkKey=6&link=test&linkKey=7'
+        @api.send(:build_body, :link => { 'test' => [5, 6, 7]} ).should =~ /link=test&linkKey=5&link=test&linkKey=6&link=test&linkKey=7/
       end
     end
     describe "process_process_options" do
@@ -120,22 +120,8 @@ describe DemocracyInAction::API do
   end
 
   describe "send Request" do
-    describe "build request" do
-      it "returns a string containing the passed options" do
-        @api.send(:build_request, {:cheese => 'brutal', :object => 'noodle'}).should match(/noodle/)
-        
-      end
-
-      describe "modifications" do
-        before do
-          @req = Net::HTTP::Post.new(URI.parse(@api.urls[:get]).path)
-          Net::HTTP::Post.stub!(:new).and_return(@req)
-        end
-        it "appends passed options into the body" do
-          @api.should_receive(:build_body).with(hash_including(:joe =>'smokey',:ronah => 'delightful'))
-          @api.send(:build_request, { :joe => 'smokey', :ronah => 'delightful' })
-        end
-      end
+    it "build body returns a string containing the passed options" do
+      @api.send(:build_body, {:cheese => 'brutal', :object => 'noodle'}).should match(/noodle/)
     end
 
     describe "request and resolution" do
@@ -146,6 +132,7 @@ describe DemocracyInAction::API do
           @stub_response = stub( 'httpresp', :body => stub( 'httpbody', :content => 'beans!' ))
           @stub_client = stub( 'httpclient', :get => @stub_response )
           @api.stub!(:client).and_return(@stub_client)
+          @api.validate_connection
         end
         it "is sent" do
           @stub_client.should_receive(:get).and_return( @stub_response )

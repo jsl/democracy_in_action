@@ -141,13 +141,14 @@ module DemocracyInAction
       }
 
     # The username used to login to your Democracy in Action account.
-    attr_reader :username
+    attr_accessor :username
     # The password used to login to your Democracy in Action account.
-    attr_reader :password
+    attr_accessor :password
     # node is a short key representing DIA servers that are known to the library ( see NODES )
-    attr_reader :node
+    attr_accessor :node
     # For new nodes or custom scripts you may wish to specify a hash of custom urls
-    attr_reader :urls
+    attr_accessor :urls
+    attr_reader :options
 
     # Requires an options hash containing: :username, :password, and :node
     #   
@@ -156,16 +157,20 @@ module DemocracyInAction
     # If a :urls hash is used, it should have the form:
     #   :urls => { :get => "get_url", :save => "save_url", :delete => "delete_url" }
     def initialize(options = {})
-      unless options && options[:username] && options[:password] && ( options[:node] || options[:urls] ) || self.class.disabled?
+      @options = options
+    end
+
+    def validate_connection
+      self.username ||= options.delete(:username) || options.delete(:email)
+      self.password ||= options.delete(:password)
+      self.node     ||= options.delete(:node)
+      unless self.username && self.password && ( self.node || options[:urls] ) || self.class.disabled?
         raise ConnectionInvalid.new("Must specify :username, :password, and ( :node or :url )")
       end 
-
-      @username, @password, @node = options.delete(:username), options.delete(:password), options.delete(:node)
-
-      @urls = options[:urls] || NODES[@node]
-      raise ConnectionInvalid.new("Requested node is not supported.  Use (#{NODES.keys.join(', ')}) or specify a custom array in :urls") unless @urls
-      raise ConnectionInvalid.new("Urls must be a hash") unless @urls.is_a?(Hash)
-      raise ConnectionInvalid.new("Urls must include at least :get, :save, and :delete") unless @urls[:get] and @urls[:save] and @urls[:delete]
+      self.urls ||= options[:urls] || NODES[node]
+      raise ConnectionInvalid.new("Requested node is not supported.  Use (#{NODES.keys.join(', ')}) or specify a custom array in :urls") unless urls
+      raise ConnectionInvalid.new("Urls must be a hash") unless urls.is_a?(Hash)
+      raise ConnectionInvalid.new("Urls must include at least :get and :authenticate ( :save, :delete, and :count are nice too )") unless urls[:get] && urls[:authenticate]
     end
 
     # Confirm that the API is enabled and the remote service is reachable
@@ -191,6 +196,7 @@ module DemocracyInAction
 
     # Connect to the service and check the current credentials
     def authenticate
+      validate_connection
       @client = HTTPClient.new
       @auth_response = @client.post(@urls[:authenticate],"email=#{username}&password=#{password}")
       raise ConnectionInvalid if @auth_response.body.content =~ /Invalid login/
@@ -379,34 +385,13 @@ module DemocracyInAction
     # 
     # Array values have their keys duplicated, creating key-value pairs for each element in the array.
     def build_body(options={})
+      options[:object] ||= options.delete(:table)
       initial_memo = param_link_hash(options.delete(:link))
       return initial_memo.join('&') if options.empty?
       options.inject(initial_memo) do |memo, (key, value)|
         value = [ value ] unless value.is_a?( Array )
         memo << value.map { |v| "#{urlencode(key.to_s)}=#{urlencode(v.to_s)}" }
       end.join('&')
-    end
-
-    # Creates a new HTTP::Request object from a passed url and an options hash.
-    #
-    # Adds the authentication values and xml-specifier to the options.
-    #
-    # Assigns any cookies being held by the API to the Request.
-    #
-    # Appends all options to the request body as a url-encoded string.
-    def build_request(options = {}) #:nodoc:
-      # import authentication information
-      if (@username && @password)
-        options[:user] = @username
-        options[:password] = @password
-      end
-
-      #indicate that xml is the desired response
-      options[:object] ||= options.delete(:table)
-
-      #format request body
-      build_body(options)
-
     end
 
     # Sends an HTTP::Request to the base_url. Builds up the request based on the passed options hash.
@@ -416,9 +401,7 @@ module DemocracyInAction
       raise NoTableSpecified.new("You must either include :object in the options hash or use the proxy methods API#[objectname].get") unless options[:object]
       return '' if API.disabled?
 
-      url = URI.parse(base_url) 
-
-      response = client.get(url, build_request(options))
+      response = client.get(base_url, build_body(options))
       return response.body.content
     end
 
