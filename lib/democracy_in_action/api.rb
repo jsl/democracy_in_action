@@ -125,9 +125,11 @@ module DemocracyInAction
         },
       :salsa => { 
         :authenticate   => 'https://salsa.democracyinaction.org/api/authenticate.sjs',
-        :get            => 'http://salsa.democracyinaction.org/dia/api/get.jsp',
-        :save        => 'http://salsa.democracyinaction.org/dia/api/process.jsp',
-        :delete         => 'http://salsa.democracyinaction.org/dia/deleteEntry.jsp'
+        :get_by_key     => 'https://salsa.democracyinaction.org/api/getObject.sjs',
+        :get            => 'https://salsa.democracyinaction.org/api/getObjects.sjs',
+        :save           => 'https://salsa.democracyinaction.org/save',
+        :delete         => 'https://salsa.democracyinaction.org/api/delete',
+        :count          => 'https://salsa.democracyinaction.org/getCount.sjs',
         },
       :wiredforchange => { 
         :get     => 'http://salsa.wiredforchange.com/dia/api/get.jsp',
