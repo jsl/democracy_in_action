@@ -1,4 +1,4 @@
 ---
-email: demo
-password: demo
-node: sandbox
+:email: demo
+:password: demo
+:node: sandbox
