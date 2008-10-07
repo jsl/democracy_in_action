@@ -116,12 +116,12 @@ module DemocracyInAction
     # A list of known DIA nodes and their associated urls
     NODES = { 
       :sandbox => {
-        :authenticate   => 'https://sandbox.democracyinaction.org/api/authenticate.sjs',
-        :get_by_key     => 'https://sandbox.democracyinaction.org/api/getObject.sjs',
-        :get            => 'https://sandbox.democracyinaction.org/api/getObjects.sjs',
-        :save           => 'https://sandbox.democracyinaction.org/save',
-        :delete         => 'https://sandbox.democracyinaction.org/api/delete',
-        :count          => 'https://sandbox.democracyinaction.org/getCount.sjs',
+        :authenticate   => 'https://sandbox.salsalabs.com/api/authenticate.sjs',
+        :get_by_key     => 'https://sandbox.salsalabs.com/api/getObject.sjs',
+        :get            => 'https://sandbox.salsalabs.com/api/getObjects.sjs',
+        :save           => 'https://sandbox.salsalabs.com/save',
+        :delete         => 'https://sandbox.salsalabs.com/api/delete',
+        :count          => 'https://sandbox.salsalabs.com/getCount.sjs',
         },
       :salsa => { 
         :authenticate   => 'https://salsa.democracyinaction.org/api/authenticate.sjs',
