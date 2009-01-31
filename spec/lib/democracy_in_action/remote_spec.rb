@@ -1,4 +1,7 @@
 require File.dirname(__FILE__) + "/../../spec_helper"
+
+SANDBOX = 'https://sandbox.salsalabs.com'
+
 describe "DIA Service" do
   before do
     @api = DemocracyInAction::API.new( working_api_arguments ) 
@@ -93,7 +96,7 @@ describe "DIA Service" do
     describe "getCount" do
       describe "when not authenticated" do
         before do
-          @r = @unauthed.send(:client).get('https://sandbox.democracyinaction.org/api/getCount.sjs?object=supporter')
+          @r = @unauthed.send(:client).get("#{SANDBOX}/api/getCount.sjs?object=supporter")
         end
         it "should have error message" do
           @r.body.content.should =~ /<data organization_KEY="-1">/
@@ -101,7 +104,7 @@ describe "DIA Service" do
       end
       describe "when authenticated" do
         before do
-          @r = @authed.send(:client).get('https://sandbox.democracyinaction.org/api/getCount.sjs?object=supporter')
+          @r = @authed.send(:client).get("#{SANDBOX}/api/getCount.sjs?object=supporter")
         end
         it "should have a success message" do
           @r.body.content.should =~ /<data organization_KEY="#{@orgkey}">/
@@ -112,7 +115,7 @@ describe "DIA Service" do
     describe "getCounts" do
       describe "when not authenticated" do
         before do
-          @r = @unauthed.send(:client).get('https://sandbox.democracyinaction.org/api/getCounts.sjs?object=supporter&groupBy=Email')
+          @r = @unauthed.send(:client).get("#{SANDBOX}/api/getCounts.sjs?object=supporter&groupBy=Email")
         end
         it "should have error message" do
           @r.body.content.should =~ /<data organization_KEY="-1">/
@@ -120,7 +123,7 @@ describe "DIA Service" do
       end
       describe "when authenticated" do
         before do
-          @r = @authed.send(:client).get('https://sandbox.democracyinaction.org/api/getCounts.sjs?object=supporter&groupBy=Email')
+          @r = @authed.send(:client).get("#{SANDBOX}/api/getCounts.sjs?object=supporter&groupBy=Email")
         end
         it "should have a success message" do
           @r.body.content.should =~ /<data organization_KEY="#{@orgkey}">/
@@ -131,7 +134,7 @@ describe "DIA Service" do
     describe "getObject" do
       describe "when not authenticated" do
         before do
-          @r = @unauthed.send(:client).get('https://sandbox.democracyinaction.org/api/getObject.sjs?object=supporter&key=-1')
+          @r = @unauthed.send(:client).get("#{SANDBOX}/api/getObject.sjs?object=supporter&key=-1")
         end
         it "should have organization_KEY undefined" do
           @r.body.content.should =~ /<data organization_KEY="undefined">/
@@ -139,7 +142,7 @@ describe "DIA Service" do
       end
       describe "when authenticated" do
         before do
-          @r = @authed.send(:client).get('https://sandbox.democracyinaction.org/api/getObject.sjs?object=supporter&key=-1')
+          @r = @authed.send(:client).get("#{SANDBOX}/api/getObject.sjs?object=supporter&key=-1")
         end
         it "should ALSO have organization_KEY undefined if we don't have access" do
           @r.body.content.should =~ /<data organization_KEY="undefined">/
@@ -150,7 +153,7 @@ describe "DIA Service" do
     describe "getObjects" do
       describe "when not authenticated" do
         before do
-          @r = @unauthed.send(:client).get('https://sandbox.democracyinaction.org/api/getObjects.sjs?object=supporter&limit=0')
+          @r = @unauthed.send(:client).get("#{SANDBOX}/api/getObjects.sjs?object=supporter&limit=0")
         end
         it "should have organization_KEY == -1" do
           @r.body.content.should =~ /<data organization_KEY="-1">/
@@ -158,7 +161,7 @@ describe "DIA Service" do
       end
       describe "when authenticated" do
         before do
-          @r = @authed.send(:client).get('https://sandbox.democracyinaction.org/api/getObjects.sjs?object=supporter&limit=0')
+          @r = @authed.send(:client).get("#{SANDBOX}/api/getObjects.sjs?object=supporter&limit=0")
         end
         it "should have organization_KEY == your organization key" do
           @r.body.content.should =~ /<data organization_KEY="#{@orgkey}">/
@@ -169,7 +172,7 @@ describe "DIA Service" do
     describe "save" do
       describe "when not authenticated" do
         before do
-          @r = @unauthed.send(:client).get('https://sandbox.democracyinaction.org/save?xml&object=supporter&Email=rd_test@email.com')
+          @r = @unauthed.send(:client).get("#{SANDBOX}/save?xml&object=supporter&Email=rd_test@email.com")
         end
         it "should have error message" do
           @r.body.content.should =~ /<error object="supporter"/ 
@@ -177,7 +180,7 @@ describe "DIA Service" do
       end
       describe "when authenticated" do
         before do
-          @r = @authed.send(:client).get('https://sandbox.democracyinaction.org/save?xml&object=supporter&Email=rd_test@email.com')
+          @r = @authed.send(:client).get("#{SANDBOX}/save?xml&object=supporter&Email=rd_test@email.com")
         end
         it "should have a success message" do
           @r.body.content.should =~ /<success object="supporter"/ 
@@ -187,12 +190,12 @@ describe "DIA Service" do
 
     describe "delete" do
       before do
-        r = @authed.send(:client).get('https://sandbox.democracyinaction.org/save?object=supporter&Email=cool2@example.org&xml=true')
+        r = @authed.send(:client).get("#{SANDBOX}/save?object=supporter&Email=cool2@example.org&xml=true")
         @key = r.body.content[/key="(\d+)"/,1]
       end
       describe "when not authenticated" do
         before do
-          @r = @unauthed.send(:client).get("https://sandbox.democracyinaction.org/delete?object=supporter&xml=1&key=#{@key}")
+          @r = @unauthed.send(:client).get("#{SANDBOX}/delete?object=supporter&xml=1&key=#{@key}")
         end
         it "should have error message" do
           @r.body.content.should match(/error table="supporter/ )
@@ -200,7 +203,7 @@ describe "DIA Service" do
       end
       describe "when authenticated" do
         before do
-          @r = @authed.send(:client).get("https://sandbox.democracyinaction.org/delete?object=supporter&key=#{@key}&xml=1")
+          @r = @authed.send(:client).get("#{SANDBOX}/delete?object=supporter&key=#{@key}&xml=1")
         end
         it "should have a success message" do
           @r.body.content.should match( %r-<success table="supporter- )
