@@ -16,8 +16,8 @@ describe DemocracyInAction::API do
       body.should =~ /key=123456&email=test%40domain.org/
     end
     it "should convert key value pairs that contain arrays into string" do
-      body = @api.send(:build_body, {"key" => "123456", "names" => ["austin", "patrice", "seth"]})
-      body.should =~ /names=austin&names=patrice&names=seth&key=123456/
+      body = @api.send(:build_body, {"key" => "123456", "names" => ["austin", "adam", "seth"]})
+      body.should =~ /names=austin&names=adam&names=seth&key=123456/
     end
   end
 
@@ -150,6 +150,7 @@ describe DemocracyInAction::API do
 
 
         describe "response is a success" do
+          require 'net/http'
           before do
             @req = stub( 'response', :get_fields => false )
             @req.stub!(:is_a?).with(Net::HTTPSuccess).and_return(true)

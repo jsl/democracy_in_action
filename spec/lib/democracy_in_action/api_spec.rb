@@ -15,6 +15,30 @@ describe DemocracyInAction::API do
     api.should_not be_connected
   end
 
+  it "raises ConnectionInvalid if disabled but get_request's behaivor isn't overridden." do
+    api = DemocracyInAction::API.new(api_arguments)
+    api.disable!
+    lambda { api.send :send_request, 'url', :object => 'object' }.should raise_error(DemocracyInAction::API::ConnectionInvalid)
+   end
+
+  it "send_request's behaivor is overrideable" do
+    api = DemocracyInAction::API.new(api_arguments)
+    api.disable!
+    def api.send_request_and_get_response(base_url, options={})
+       'hooray'
+    end
+    (api.send :send_request, 'url', :object => 'object').should == 'hooray'
+    lambda {api.send :send_request, 'url', :object => 'object'}.should_not raise_error(DemocracyInAction::API::ConnectionInvalid)
+  end
+
+  it 'disable is per instance not per class' do
+    api1 = DemocracyInAction::API.new(api_arguments)
+    api2 = DemocracyInAction::API.new(api_arguments)
+    api1.disable!
+    api1.disabled?.should be_true 
+    api2.disabled?.should be_false
+  end
+
   describe "validate" do
     api_arguments.each do |key, value| 
       it "sets attribute #{key} to equal the passed value" do

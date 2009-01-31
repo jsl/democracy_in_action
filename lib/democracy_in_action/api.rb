@@ -23,7 +23,7 @@ module DemocracyInAction
   #
   # = Object syntax
   # Because every API request requires an object type, 
-  # the API provides you with a set of object methods to improve the readablity of your code.  
+  # the API provides you with a set of instance methods to improve the readablity of your code.  
   # The examples above could be written:
   #
   #   @api.groups.get    :condition => { :Group_Name => 'Peaceful Warriors' }
@@ -122,6 +122,7 @@ module DemocracyInAction
         :save           => 'https://sandbox.salsalabs.com/save',
         :delete         => 'https://sandbox.salsalabs.com/api/delete',
         :count          => 'https://sandbox.salsalabs.com/getCount.sjs',
+        :email          => 'https://sandbox.salsalabs.com/email'
         },
       :salsa => { 
         :authenticate   => 'https://salsa.democracyinaction.org/api/authenticate.sjs',
@@ -130,6 +131,7 @@ module DemocracyInAction
         :save           => 'https://salsa.democracyinaction.org/save',
         :delete         => 'https://salsa.democracyinaction.org/api/delete',
         :count          => 'https://salsa.democracyinaction.org/getCount.sjs',
+        :email          => 'https://salsa.democracyinaction.org/email'
         },
       :wiredforchange => { 
         :get     => 'http://salsa.wiredforchange.com/dia/api/get.jsp',
@@ -167,7 +169,8 @@ module DemocracyInAction
       self.username ||= options.delete(:username) || options.delete(:email)
       self.password ||= options.delete(:password)
       self.node     ||= options.delete(:node)
-      unless self.username && self.password && ( self.node || options[:urls] ) || self.class.disabled?
+      raise ConnectionInvalid.new("Connection disabled.") if disabled?
+      unless self.username && self.password && ( self.node || options[:urls] )
         raise ConnectionInvalid.new("Must specify :username, :password, and ( :node or :url )")
       end 
       self.urls ||= options[:urls] || NODES[node]
@@ -186,13 +189,13 @@ module DemocracyInAction
     end
 
     # Prevent the API from contacting the remote service.  Used for development and testing purposes.
-    def self.disable!
-      @@disabled = true
+    def disable!
+      @disabled = true
     end
 
     # Confirm whether the API is allowed to contact the service.
-    def self.disabled?
-      @@disabled ||= false
+    def disabled?
+      @disabled ||= false
     end
 
     attr_reader :auth_response
@@ -398,7 +401,7 @@ module DemocracyInAction
     # 
     # Array values have their keys duplicated, creating key-value pairs for each element in the array.
     def build_body(options={})
-      options[:object] ||= options.delete(:table)
+      options[:object] ||= options.delete(:table) if options[:table]
       initial_memo = param_link_hash(options.delete(:link))
       return initial_memo.join('&') if options.empty?
       options.inject(initial_memo) do |memo, (key, value)|
@@ -412,10 +415,12 @@ module DemocracyInAction
     # Returns the body of the response.
     def send_request(base_url, options={})
       raise NoTableSpecified.new("You must either include :object in the options hash or use the proxy methods API#[objectname].get") unless options[:object]
-      return '' if API.disabled?
+      send_request_and_get_response base_url, options 
+    end
 
-      response = client.get(base_url, build_body(options))
-      return response.body.content
+    def send_request_and_get_response(base_url, options={})
+      raise Exception.new('You must override send_request_and_get_response in disablded DIA connections.') if disabled?
+      client.get(base_url, build_body(options)).body.content
     end
 
     def client

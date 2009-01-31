@@ -8,8 +8,8 @@ describe "DIA Service" do
   end
   it "should accept key value pairs that contain arrays in the body of the request post" do
     pending
-    body = @api.send(:build_body, {"key" => "123456", "names" => ["austin", "patrice", "seth"]})
-    body.should == "names=austin&names=patrice&names=seth&key=123456"
+    body = @api.send(:build_body, {"key" => "123456", "names" => ["austin", "adam", "seth"]})
+    body.should == "names=austin&names=adam&names=seth&key=123456"
   end
 
   describe "authentication" do
