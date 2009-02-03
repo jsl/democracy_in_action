@@ -15,28 +15,18 @@ describe DemocracyInAction::API do
     api.should_not be_connected
   end
 
-  it "raises DisabledConnectionException if disabled but get_request's behaivor isn't overridden." do
-    api = DemocracyInAction::API.new api_arguments
-    api.disable!
-    lambda { api.send :send_request, 'url', :object => 'object' }.should raise_error( DemocracyInAction::API::DisabledConnectionException )
-   end
-
-  it "send_request's behaivor is overrideable" do
-    api = DemocracyInAction::API.new api_arguments
-    api.disable!
-    def api.send_request_and_get_response(base_url, options={})
-       'hooray'
+  describe "test methods" do
+    before do
+      @api = DemocracyInAction::API.new api_arguments
+      @api.disable!
     end
-    (api.send :send_request, 'url', :object => 'object').should == 'hooray'
-    lambda {api.send :send_request, 'url', :object => 'object'}.should_not raise_error(DemocracyInAction::API::ConnectionInvalid)
-  end
-
-  it 'disable is per instance not per class' do
-    api1 = DemocracyInAction::API.new(api_arguments)
-    api2 = DemocracyInAction::API.new(api_arguments)
-    api1.disable!
-    api1.disabled?.should be_true 
-    api2.disabled?.should be_false
+    it "send_request raises DisabledConnectionException if disabled" do
+      lambda { @api.send :send_request, 'url', :object => 'object' }.should raise_error( DemocracyInAction::API::DisabledConnectionException )
+    end
+    it "send_request can be stubbed to return any value" do
+      @api.stub!(:send_request).and_return('bananas')
+      @api.send(:send_request, 'url', :object => 'object').should == 'bananas'
+    end
   end
 
   describe "validate" do

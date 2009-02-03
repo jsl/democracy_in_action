@@ -112,8 +112,6 @@ module DemocracyInAction
     end
     class ConnectionInvalid < ArgumentError #:nodoc:
     end
-    class DisabledConnectionException < Exception
-    end
 
     # A list of known DIA nodes and their associated urls
     NODES = { 
@@ -171,7 +169,6 @@ module DemocracyInAction
       self.username ||= options.delete(:username) || options.delete(:email)
       self.password ||= options.delete(:password)
       self.node     ||= options.delete(:node)
-      raise ConnectionInvalid.new("Connection disabled.") if disabled?
       unless self.username && self.password && ( self.node || options[:urls] )
         raise ConnectionInvalid.new("Must specify :username, :password, and ( :node or :url )")
       end 
@@ -188,24 +185,6 @@ module DemocracyInAction
       rescue SocketError, ConnectionInvalid #means the library cannot reach the DIA server at all, or no internet is available
         false
       end
-    end
-
-    # Prevent the API from contacting the remote service.  Used for development and testing purposes.
-    def disable!
-      @disabled = true
-    end
-
-    # Confirm whether the API is allowed to contact the service.
-    def disabled?
-      @disabled || self.class.disabled?
-    end
-
-    def self.disabled?
-      @@disabled ||= false
-    end
-
-    def self.disable!
-      @@disabled = true
     end
 
     attr_reader :auth_response
@@ -427,11 +406,6 @@ module DemocracyInAction
     # Returns the body of the response.
     def send_request(base_url, options={})
       raise NoTableSpecified.new("You must either include :object in the options hash or use the proxy methods API#[objectname].get") unless options[:object]
-      send_request_and_get_response base_url, options 
-    end
-
-    def send_request_and_get_response(base_url, options={})
-      raise DisabledConnectionException.new('You must override send_request_and_get_response in disablded DIA connections.') if disabled?
       client.get(base_url, build_body(options)).body.content
     end
 
