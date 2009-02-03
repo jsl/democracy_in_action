@@ -112,6 +112,8 @@ module DemocracyInAction
     end
     class ConnectionInvalid < ArgumentError #:nodoc:
     end
+    class DisabledConnectionException < Exception
+    end
 
     # A list of known DIA nodes and their associated urls
     NODES = { 
@@ -195,7 +197,15 @@ module DemocracyInAction
 
     # Confirm whether the API is allowed to contact the service.
     def disabled?
-      @disabled ||= false
+      @disabled || self.class.disabled?
+    end
+
+    def self.disabled?
+      @@disabled ||= false
+    end
+
+    def self.disable!
+      @@disabled = true
     end
 
     attr_reader :auth_response
@@ -235,7 +245,9 @@ module DemocracyInAction
       validate_connection
       url = options[:key] ? urls[:get_by_key] : urls[:get]
       body = send_request(url, options_for_get(options))
-      unless has_error?( body )
+      if has_error?( body )
+        error(body)
+      else 
         if options[:key]
           parse(body).result.first
         else
@@ -419,7 +431,7 @@ module DemocracyInAction
     end
 
     def send_request_and_get_response(base_url, options={})
-      raise Exception.new('You must override send_request_and_get_response in disablded DIA connections.') if disabled?
+      raise DisabledConnectionException.new('You must override send_request_and_get_response in disablded DIA connections.') if disabled?
       client.get(base_url, build_body(options)).body.content
     end
 

@@ -127,8 +127,6 @@ describe DemocracyInAction::API do
     describe "request and resolution" do
       describe "the actual request" do
         before do
-          #@net_req = stub( 'request', :start => true, :error! => true, :body => true )
-          #Net::HTTP.stub!(:new).and_return( @net_req )
           @stub_response = stub( 'httpresp', :body => stub( 'httpbody', :content => 'beans!' ))
           @stub_client = stub( 'httpclient', :get => @stub_response )
           @api.stub!(:client).and_return(@stub_client)
@@ -137,31 +135,6 @@ describe DemocracyInAction::API do
         it "is sent" do
           @stub_client.should_receive(:get).and_return( @stub_response )
           @api.send(:send_request, @api.urls[:get], { :object => 'cheese' })
-        end
-      end
-
-      describe "resolution" do
-        it "calls error on the response unless the response is a success" do
-          pending "errorz? whutfor? it works"
-          req = nil
-          req.should_receive(:error!)
-          @api.send :resolve_request, req 
-        end
-
-
-        describe "response is a success" do
-          require 'net/http'
-          before do
-            @req = stub( 'response', :get_fields => false )
-            @req.stub!(:is_a?).with(Net::HTTPSuccess).and_return(true)
-          end
-
-          it "does not call error on a success" do
-            pending
-            @req.should_not_receive(:error!)
-            @api.send :resolve_request, @req 
-          end
-
         end
       end
     end

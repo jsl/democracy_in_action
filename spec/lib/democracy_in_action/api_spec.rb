@@ -15,14 +15,14 @@ describe DemocracyInAction::API do
     api.should_not be_connected
   end
 
-  it "raises ConnectionInvalid if disabled but get_request's behaivor isn't overridden." do
-    api = DemocracyInAction::API.new(api_arguments)
+  it "raises DisabledConnectionException if disabled but get_request's behaivor isn't overridden." do
+    api = DemocracyInAction::API.new api_arguments
     api.disable!
-    lambda { api.send :send_request, 'url', :object => 'object' }.should raise_error(DemocracyInAction::API::ConnectionInvalid)
+    lambda { api.send :send_request, 'url', :object => 'object' }.should raise_error( DemocracyInAction::API::DisabledConnectionException )
    end
 
   it "send_request's behaivor is overrideable" do
-    api = DemocracyInAction::API.new(api_arguments)
+    api = DemocracyInAction::API.new api_arguments
     api.disable!
     def api.send_request_and_get_response(base_url, options={})
        'hooray'

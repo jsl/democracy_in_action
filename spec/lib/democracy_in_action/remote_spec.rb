@@ -6,11 +6,6 @@ describe "DIA Service" do
   before do
     @api = DemocracyInAction::API.new( working_api_arguments ) 
   end
-  it "should accept key value pairs that contain arrays in the body of the request post" do
-    pending
-    body = @api.send(:build_body, {"key" => "123456", "names" => ["austin", "adam", "seth"]})
-    body.should == "names=austin&names=adam&names=seth&key=123456"
-  end
 
   describe "authentication" do
     describe "with invalid credentials" do
@@ -207,6 +202,43 @@ describe "DIA Service" do
         end
         it "should have a success message" do
           @r.body.content.should match( %r-<success table="supporter- )
+        end
+      end
+    end
+
+    # test our assumptions about DIA html responses
+    # new API is supposed to require an authentication request first
+    # i'm skeptical this is the case for this method (email)
+    #
+    # https://salsa.democracyinaction.org/email?xml&to=seth.h.walker@gmail.com&cc=seth%2Bcc@radicaldesigns.org&username=test&password=test&subject=test&from=seth%2Bfrom@radicaldesigns.org&bcc=seth%2Bbcc@radicaldesigns.org&content=testing
+    describe "email" do
+      before do 
+        @success =%r{<br/>Testing\ for\ spam:\ false}
+        @spam_response = %r|<br/>Testing for spam: falseThanks!  Your message has been sent.|
+        @valid_args = "xml&to=nobody@example.com&subject=test&from=nobody@example.com"
+      end
+      describe "when not authenticated" do
+        before do
+          @r = @unauthed.send(:client).get("#{SANDBOX}/email?#{@valid_args}")
+        end
+        it "reports email is successfully sent" do
+          @r.body.content.should match( @success )
+        end
+      end
+      describe "when authenticated" do
+        before do
+          @r = @authed.send(:client).get("#{SANDBOX}/email?#{@valid_args}")
+        end
+        it "should have a success message" do
+          @r.body.content.should match( @success )
+        end
+      end
+      describe "content trips spam filter" do
+        before do
+          @r = @authed.send(:client).get("#{SANDBOX}/email?#{@valid_args}&content=viagra")
+        end
+        it "reports success and includes additional affirmation the mesg has been sent" do
+          @r.body.content.should match(@spam_response)
         end
       end
     end
