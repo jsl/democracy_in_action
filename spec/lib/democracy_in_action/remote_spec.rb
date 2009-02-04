@@ -1,244 +1,231 @@
 require File.dirname(__FILE__) + "/../../spec_helper"
+require 'httpclient'
 
-SANDBOX = 'https://sandbox.salsalabs.com'
+NODE    = 'https://sandbox.salsalabs.com'
+EMAIL = 'demo'
+PASS = 'demo'
 
-describe "DIA Service" do
-  before do
-    @api = DemocracyInAction::API.new( working_api_arguments ) 
-  end
+describe "DemocracyInAction API" do
 
-  describe "authentication" do
-    describe "with invalid credentials" do
-      describe "authentication_request" do
-        before do
-          @api = DemocracyInAction::API.new( api_arguments ) 
-          @api.authenticate rescue DemocracyInAction::API::ConnectionInvalid
-          @response = @api.auth_response
-        end
-        it "should return 200" do
-          @response.status.should == 200
-        end
-        it "should have an error message" do
-          @response.content.should match(/Invalid login/)
-        end
-        it "should redirect to login" do
-           pending
-          @response['location'].should =~ /login.jsp/
-        end
-      end
-      describe "authenticate" do
-        before do
-          @api = DemocracyInAction::API.new( api_arguments ) 
-        end
-        it "should return false" do
-          lambda { @api.authenticate }.should raise_error
-        end
-        it "should return false in authenticated?" do
-          @api.authenticate rescue DemocracyInAction::API::ConnectionInvalid
-          @api.authenticated?.should be_false
-        end
-        it "should raise an error" do
-          pending
-          lambda {@api.authenticate}.should raise_error
-        end
-      end
-    end
-    describe "with valid credentials" do
-      describe "authentication_request" do
-        before do
-          @api = DemocracyInAction::API.new( working_api_arguments )
-          @api.authenticate
-          @response = @api.auth_response
-        end
-        it "should return 200" do
-          @response.status.should == 200
-        end
-        it "should have show success message" do
-          @response.content.should =~ /Successful Login/
-        end
-      end
-      describe "authenticate" do
-        before do
-          @api = DemocracyInAction::API.new( working_api_arguments )
-        end
-        it "should return true" do
-          @api.authenticate.should_not be_nil
-        end
-        it "should not raise error" do
-          lambda { @api.authenticate }.should_not raise_error
-        end
-        it "should return true in authenticated?" do
-          @api.authenticate
-          @api.authenticated?.should be_true
-        end
-      end
-    end
-  end
-
-  describe "responses" do
+  authentication_url = NODE + '/api/authenticate.sjs'
+  describe "authentication requests (POST #{authentication_url})" do
     before do
-      @unauthed = DemocracyInAction::API.new( api_arguments )
-      begin
-        @unauthed.authenticate
-      rescue DemocracyInAction::API::ConnectionInvalid
+      @client = HTTPClient.new
+    end
+    describe "with invalid credentials (invalid email and password)" do
+      before do
+        @r ||= @client.post(authentication_url,"email=dummy&password=sekrit")
+        @response = @r.dup
       end
+      it "should have 200 status, even tho we might prefer something in the 400s" do
+        @response.status.should == 200
+      end
+      it "should have an error message in the body" do
+        @response.content.should match(/Invalid login/)
+      end
+      it "should match the invalid_auth fixture" do
+        @response.content.should == fixture_file_read('invalid_auth.xml')
+      end
+    end
+    describe "with valid credentials (valid email and password)" do
+      before do
+        @r ||= @client.post(authentication_url,"email=#{EMAIL}&password=#{PASS}")
+        @response = @r.dup
+      end
+      it "should have 200 status" do
+        @response.status.should == 200
+      end
+      it "should have show success message" do
+        @response.content.should =~ /Successful Login/
+      end
+      it "should match the valid_auth fixture" do
+        @response.content.should == fixture_file_read('valid_auth.xml')
+      end
+    end
+  end
 
-      @authed = DemocracyInAction::API.new( working_api_arguments )
-      @authed.authenticate
-      @orgkey = 74
+  describe "request for" do
+    before do
+      @unauthed_client   ||= HTTPClient.new
+      @unauthed_response ||= @unauthed_client.post(authentication_url,"email=dummy&password=sekrit")
+      @authed_client     ||= HTTPClient.new
+      @authed_response   ||= @authed_client.post(authentication_url,"email=#{EMAIL}&password=#{PASS}")
     end
 
-    describe "getCount" do
+    count_url = NODE + "/api/getCount.sjs?object=supporter"
+    describe "count (GET #{count_url})" do
       describe "when not authenticated" do
         before do
-          @r = @unauthed.send(:client).get("#{SANDBOX}/api/getCount.sjs?object=supporter")
+          @unauthed_count_response ||= @unauthed_client.get(count_url)
+          @response = @unauthed_count_response.dup
         end
         it "should have error message" do
-          @r.body.content.should =~ /<data organization_KEY="-1">/
+          @response.body.content.should =~ /<data organization_KEY="-1">/
+        end
+        it "should match invalid supporter count fixture" do
+          @response.body.content.should == fixture_file_read('invalid_supporter_count.xml')
         end
       end
       describe "when authenticated" do
         before do
-          @r = @authed.send(:client).get("#{SANDBOX}/api/getCount.sjs?object=supporter")
+          @authed_count_response ||= @authed_client.get(count_url)
+          @response = @authed_count_response.dup
         end
         it "should have a success message" do
-          @r.body.content.should =~ /<data organization_KEY="#{@orgkey}">/
+          @response.body.content.should =~ /<data organization_KEY="\d+">/
+        end
+        it "should match supporter count fixture" do
+          pending
+          @response.body.content.should == fixture_file_read('supporter_count.xml')
         end
       end
     end
 
-    describe "getCounts" do
+    counts_url = NODE + "/api/getCounts.sjs?object=supporter&groupBy=Email"
+    describe "grouped count (GET #{counts_url})" do
       describe "when not authenticated" do
         before do
-          @r = @unauthed.send(:client).get("#{SANDBOX}/api/getCounts.sjs?object=supporter&groupBy=Email")
+          @unauthed_counts_response ||= @unauthed_client.get(counts_url)
+          @response = @unauthed_counts_response.dup
         end
         it "should have error message" do
-          @r.body.content.should =~ /<data organization_KEY="-1">/
+          @response.body.content.should =~ /<data organization_KEY="-1">/
         end
       end
       describe "when authenticated" do
         before do
-          @r = @authed.send(:client).get("#{SANDBOX}/api/getCounts.sjs?object=supporter&groupBy=Email")
+          @authed_counts_response ||= @authed_client.get(counts_url)
+          @response = @authed_counts_response.dup
         end
         it "should have a success message" do
-          @r.body.content.should =~ /<data organization_KEY="#{@orgkey}">/
+          @response.body.content.should =~ /<data organization_KEY="\d+">/
         end
       end
     end
 
-    describe "getObject" do
+    object_url = NODE + "/api/getObject.sjs?object=supporter&key=-1"
+    describe "single object (GET #{object_url})" do
       describe "when not authenticated" do
         before do
-          @r = @unauthed.send(:client).get("#{SANDBOX}/api/getObject.sjs?object=supporter&key=-1")
+          @unauthed_object_response ||= @unauthed_client.get(object_url)
+          @response = @unauthed_object_response.dup
         end
         it "should have organization_KEY undefined" do
-          @r.body.content.should =~ /<data organization_KEY="undefined">/
+          @response.body.content.should =~ /<data organization_KEY="undefined">/
         end
       end
-      describe "when authenticated" do
+      describe "when authenticated, but we don't have access" do
         before do
-          @r = @authed.send(:client).get("#{SANDBOX}/api/getObject.sjs?object=supporter&key=-1")
+          @authed_object_response ||= @authed_client.get(object_url)
+          @response = @authed_object_response.dup
         end
-        it "should ALSO have organization_KEY undefined if we don't have access" do
-          @r.body.content.should =~ /<data organization_KEY="undefined">/
+        it "should have organization_KEY undefined, which is unfortunately the same response as unauthenticated" do
+          @response.body.content.should =~ /<data organization_KEY="undefined">/
         end
       end
     end
 
-    describe "getObjects" do
+    objects_url = NODE + "/api/getObjects.sjs?object=supporter&limit=0"
+    describe "multiple objects (GET #{objects_url})" do
       describe "when not authenticated" do
         before do
-          @r = @unauthed.send(:client).get("#{SANDBOX}/api/getObjects.sjs?object=supporter&limit=0")
+          @unauthed_object_response ||= @unauthed_client.get(objects_url)
+          @response = @unauthed_object_response.dup
         end
         it "should have organization_KEY == -1" do
-          @r.body.content.should =~ /<data organization_KEY="-1">/
+          @response.body.content.should =~ /<data organization_KEY="-1">/
         end
       end
       describe "when authenticated" do
         before do
-          @r = @authed.send(:client).get("#{SANDBOX}/api/getObjects.sjs?object=supporter&limit=0")
+          @authed_object_response ||= @authed_client.get(objects_url)
+          @response = @authed_object_response.dup
         end
         it "should have organization_KEY == your organization key" do
-          @r.body.content.should =~ /<data organization_KEY="#{@orgkey}">/
+          @response.body.content.should =~ /<data organization_KEY="\d+">/
         end
       end
     end
 
-    describe "save" do
+    save_url = NODE + "/save?xml&object=supporter&Email=test@example.com"
+    describe "save (GET #{save_url})" do
       describe "when not authenticated" do
         before do
-          @r = @unauthed.send(:client).get("#{SANDBOX}/save?xml&object=supporter&Email=rd_test@email.com")
+          @unauthed_save_response ||= @unauthed_client.get(save_url)
+          @response = @unauthed_save_response.dup
         end
         it "should have error message" do
-          @r.body.content.should =~ /<error object="supporter"/ 
+          @response.body.content.should =~ /<error object="supporter"/ 
         end
       end
       describe "when authenticated" do
         before do
-          @r = @authed.send(:client).get("#{SANDBOX}/save?xml&object=supporter&Email=rd_test@email.com")
+          @authed_save_response ||= @authed_client.get(save_url)
+          @response = @authed_save_response.dup
         end
         it "should have a success message" do
-          @r.body.content.should =~ /<success object="supporter"/ 
+          @response.body.content.should =~ /<success object="supporter"/ 
         end
       end
     end
 
-    describe "delete" do
+    delete_url = NODE + "/delete?object=supporter&xml=1&key="
+    describe "delete (GET #{delete_url}<key>)" do
       before do
-        r = @authed.send(:client).get("#{SANDBOX}/save?object=supporter&Email=cool2@example.org&xml=true")
-        @key = r.body.content[/key="(\d+)"/,1]
+        @authed_save_response ||= @authed_client.get(save_url)
+        @key = @authed_save_response.body.content[/key="(\d+)"/,1]
       end
       describe "when not authenticated" do
         before do
-          @r = @unauthed.send(:client).get("#{SANDBOX}/delete?object=supporter&xml=1&key=#{@key}")
+          @unauthed_delete_response ||= @unauthed_client.get(delete_url+@key)
+          @response = @unauthed_delete_response.dup
         end
         it "should have error message" do
-          @r.body.content.should match(/error table="supporter/ )
+          @response.body.content.should match(/error table="supporter/ )
         end
       end
       describe "when authenticated" do
         before do
-          @r = @authed.send(:client).get("#{SANDBOX}/delete?object=supporter&key=#{@key}&xml=1")
+          @authed_delete_response ||= @authed_client.get(delete_url+@key)
+          @response = @authed_delete_response.dup
         end
         it "should have a success message" do
-          @r.body.content.should match( %r-<success table="supporter- )
+          @response.body.content.should match( /<success table="supporter/ )
         end
       end
     end
 
-    # test our assumptions about DIA html responses
-    # new API is supposed to require an authentication request first
-    # i'm skeptical this is the case for this method (email)
-    #
-    # https://salsa.democracyinaction.org/email?xml&to=seth.h.walker@gmail.com&cc=seth%2Bcc@radicaldesigns.org&username=test&password=test&subject=test&from=seth%2Bfrom@radicaldesigns.org&bcc=seth%2Bbcc@radicaldesigns.org&content=testing
-    describe "email" do
+    email_url = NODE + "/email?xml&to=to@example.com&from=from@example.com&subject=test&content=test"
+    describe "email (GET #{email_url})" do
       before do 
         @success =%r{<br/>Testing\ for\ spam:\ false}
         @spam_response = %r|<br/>Testing for spam: falseThanks!  Your message has been sent.|
-        @valid_args = "xml&to=nobody@example.com&subject=test&from=nobody@example.com"
       end
       describe "when not authenticated" do
         before do
-          @r = @unauthed.send(:client).get("#{SANDBOX}/email?#{@valid_args}")
+          @unauthed_email_response ||= @unauthed_client.get(email_url)
+          @response = @unauthed_email_response.dup
         end
         it "reports email is successfully sent" do
-          @r.body.content.should match( @success )
+          @response.body.content.should match( @success )
         end
       end
       describe "when authenticated" do
         before do
-          @r = @authed.send(:client).get("#{SANDBOX}/email?#{@valid_args}")
+          @authed_email_response ||= @authed_client.get(email_url)
+          @response = @authed_email_response.dup
         end
         it "should have a success message" do
-          @r.body.content.should match( @success )
+          @response.body.content.should match( @success )
         end
       end
       describe "content trips spam filter" do
         before do
-          @r = @authed.send(:client).get("#{SANDBOX}/email?#{@valid_args}&content=viagra")
+          @authed_spam_response ||= @authed_client.get(email_url+"&content=viagra")
+          @response = @authed_spam_response.dup
         end
         it "reports success and includes additional affirmation the mesg has been sent" do
-          @r.body.content.should match(@spam_response)
+          @response.body.content.should match(@spam_response)
         end
       end
     end
