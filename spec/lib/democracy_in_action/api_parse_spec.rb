@@ -16,10 +16,10 @@ describe "DemocracyInAction::API Parser" do
   describe "parsing the records" do
     describe "a supporter record" do
       before do
-        @supporter = fixture_file_read('supporter.xml')
+        @supporter = fixture_file_read('supporter_by_key.xml')
       end
       it "should have a first name" do
-        @api.send(:parse, @supporter).result.first['First_Name'].should == 'test1'
+        @api.send(:parse, @supporter).result.first['First_Name'].should == 'Homer'
       end
     end
     describe "an event record" do
