@@ -5,6 +5,7 @@ describe DemocracyInAction::API do
     describe "with invalid credentials" do
       before do
         @api = DemocracyInAction::API.new( api_arguments ) 
+        @api.stub!(:authentication_request).and_return(fixture_file_read('invalid_auth.xml'))
       end
       it "should return false" do
         lambda { @api.authenticate }.should raise_error
@@ -22,6 +23,7 @@ describe DemocracyInAction::API do
       describe "authenticate" do
         before do
           @api = DemocracyInAction::API.new( working_api_arguments )
+          @api.stub!(:authentication_request).and_return(fixture_file_read('valid_auth.xml'))
         end
         it "should return true" do
           @api.authenticate.should_not be_nil

@@ -13,6 +13,7 @@ require 'democracy_in_action/test_methods'
 Spec::Runner.configure do |config|
 
   DemocracyInAction::API.send :include, DemocracyInAction::TestMethods
+  DemocracyInAction::API.disable!
 
   def api_arguments
     user = ENV['DIA_USER'] || 'dummy'
@@ -28,6 +29,7 @@ Spec::Runner.configure do |config|
   end
 
   def fixture_file_read(filename)
-    File.read(File.dirname(__FILE__) + '/fixtures/' + filename)
+    @@fixture_responses ||= {}
+    @@fixture_responses[filename] ||= File.read(File.dirname(__FILE__) + '/fixtures/' + filename)
   end
 end

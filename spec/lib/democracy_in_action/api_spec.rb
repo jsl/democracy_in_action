@@ -8,10 +8,12 @@ describe DemocracyInAction::API do
 
   it "knows when it is connected" do
     api = DemocracyInAction::API.new( working_api_arguments )
+    api.stub!(:authentication_request).and_return(fixture_file_read('valid_auth.xml'))
     api.should be_connected
   end
   it "it is not connected when passed bad arguments" do
     api = DemocracyInAction::API.new( api_arguments )
+    api.stub!(:authentication_request).and_return(fixture_file_read('invalid_auth.xml'))
     api.should_not be_connected
   end
 
@@ -66,10 +68,7 @@ describe DemocracyInAction::API do
   end
 
   it "gets data from DIA" do
-    unless @api.connected?
-      @api.stub!(:send_request).and_return( fixture_file_read('supporter_by_limit_1.xml'))
-    end
-
+    @api.stub!(:send_request).and_return( fixture_file_read('supporter_by_limit_1.xml'))
     result = @api.get(:object => 'supporter', 'limit' => 1).first
     result['key'].should match( /^\d+$/ )
     result['Email'].should_not be_nil
@@ -89,14 +88,6 @@ describe DemocracyInAction::API do
     it "should be enumerable" do
       @result.all?.should be_true
     end
-  end
-
-  it "sends data to DIA for processing" do
-    unless @api.connected?
-      @api.stub!(:send_request).and_return( fixture_file_read('save.xml'))
-    end
-    result = @api.save 'object' => 'supporter', :Email => 'test3@radicaldesigns.org'
-    result.should match( /^\d+$/ )
   end
 
   describe "proxy" do

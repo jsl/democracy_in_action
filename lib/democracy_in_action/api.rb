@@ -192,11 +192,14 @@ module DemocracyInAction
     # Connect to the service and check the current credentials
     def authenticate
       validate_connection
+      raise ConnectionInvalid if authentication_request =~ /Invalid login/
+      @authenticated = true
+    end
+
+    def authentication_request
       @client = HTTPClient.new
       @auth_response = @client.post(@urls[:authenticate],"email=#{username}&password=#{password}")
-      raise ConnectionInvalid if @auth_response.body.content =~ /Invalid login/
-      @authenticated = true
-      @client
+      @auth_response.body.content
     end
 
     def authenticated?

@@ -1,3 +1,7 @@
+if !ENV['REMOTE']
+  puts "not running remote specs, set ENV['REMOTE']"
+else
+
 require File.dirname(__FILE__) + "/../../spec_helper"
 require 'httpclient'
 
@@ -230,4 +234,5 @@ describe "DemocracyInAction API" do
       end
     end
   end
+end
 end

@@ -21,27 +21,6 @@ describe DemocracyInAction::API do
     end
   end
 
-  describe "disabling" do
-    it "is not disabled by default" do
-      DemocracyInAction::API.should_not be_disabled
-    end
-
-    describe "when disabled" do
-      before(:all) do
-        DemocracyInAction::API.disable!
-      end
-
-      after(:all) do
-        class DemocracyInAction::API; @@disabled=false; end
-      end
-
-      it "should provide ability to disable actually posting data to DIA" do
-        DemocracyInAction::API.should be_disabled
-      end
-    end
-  end
-
-
   describe "get" do
 
     describe "with multiple keys" do
@@ -122,21 +101,6 @@ describe DemocracyInAction::API do
   describe "send Request" do
     it "build body returns a string containing the passed options" do
       @api.send(:build_body, {:cheese => 'brutal', :object => 'noodle'}).should match(/noodle/)
-    end
-
-    describe "request and resolution" do
-      describe "the actual request" do
-        before do
-          @stub_response = stub( 'httpresp', :body => stub( 'httpbody', :content => 'beans!' ))
-          @stub_client = stub( 'httpclient', :get => @stub_response )
-          @api.stub!(:client).and_return(@stub_client)
-          @api.validate_connection
-        end
-        it "is sent" do
-          @stub_client.should_receive(:get).and_return( @stub_response )
-          @api.send(:send_request, @api.urls[:get], { :object => 'cheese' })
-        end
-      end
     end
   end
 
