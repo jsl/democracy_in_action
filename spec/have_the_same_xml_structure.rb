@@ -7,9 +7,9 @@ module XmlStructureMatcher
 
     def matches?(target)  
       @target = target  
-      xml = Nokogiri.XML(@expected)
+      xml = Nokogiri.XML(@target)
       @missing = []
-      Nokogiri.XML(@target).traverse do |node|
+      Nokogiri.XML(@expected).traverse do |node|
         next unless node.is_a?(Nokogiri::XML::Element)
         @missing << node.name if xml.search(node.path).empty?
       end

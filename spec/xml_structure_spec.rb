@@ -12,7 +12,7 @@ describe "xml documents with same structure" do
   it "should be ok with a superset of tag" do
     first = "<one><two>hey</two></one>"
     second = "<one><two>hey></two><three>hi</three></one>"
-    first.should have_the_same_xml_structure_as second
+    second.should have_the_same_xml_structure_as(first)
   end
 end
 =end
