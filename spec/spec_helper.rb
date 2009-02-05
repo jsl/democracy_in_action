@@ -10,8 +10,10 @@ $:.unshift(File.dirname(__FILE__) + '/../lib')
 require 'pp'
 require 'democracy_in_action'
 require 'democracy_in_action/test_methods'
+require 'spec/have_the_same_xml_structure'
 Spec::Runner.configure do |config|
 
+  config.include(XmlStructureMatcher)
   DemocracyInAction::API.send :include, DemocracyInAction::TestMethods
   DemocracyInAction::API.disable!
 
