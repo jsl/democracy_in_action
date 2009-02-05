@@ -79,8 +79,7 @@ describe "DemocracyInAction API" do
           @response.body.content.should =~ /<data organization_KEY="\d+">/
         end
         it "should match supporter count fixture" do
-          pending
-          @response.body.content.should == fixture_file_read('supporter_count.xml')
+          @response.body.content.should have_the_same_xml_structure_as(fixture_file_read('supporter_count.xml'))
         end
       end
     end
@@ -104,27 +103,8 @@ describe "DemocracyInAction API" do
         it "should have a success message" do
           @response.body.content.should =~ /<data organization_KEY="\d+">/
         end
-      end
-    end
-
-    object_url = NODE + "/api/getObject.sjs?object=supporter&key=-1"
-    describe "single object (GET #{object_url})" do
-      describe "when not authenticated" do
-        before do
-          @unauthed_object_response ||= @unauthed_client.get(object_url)
-          @response = @unauthed_object_response.dup
-        end
-        it "should have organization_KEY undefined" do
-          @response.body.content.should =~ /<data organization_KEY="undefined">/
-        end
-      end
-      describe "when authenticated, but we don't have access" do
-        before do
-          @authed_object_response ||= @authed_client.get(object_url)
-          @response = @authed_object_response.dup
-        end
-        it "should have organization_KEY undefined, which is unfortunately the same response as unauthenticated" do
-          @response.body.content.should =~ /<data organization_KEY="undefined">/
+        it "should have the same structure as getCounts fixture" do
+          @response.body.content.should have_the_same_xml_structure_as(fixture_file_read('getCounts.sjs.xml'))
         end
       end
     end
@@ -147,6 +127,41 @@ describe "DemocracyInAction API" do
         end
         it "should have organization_KEY == your organization key" do
           @response.body.content.should =~ /<data organization_KEY="\d+">/
+        end
+        it "should have the same structure as supporters fixture" do
+        end
+      end
+    end
+
+    object_url = NODE + "/api/getObject.sjs?object=supporter&key=<key>"
+    describe "single object (GET #{object_url})" do
+      describe "when not authenticated" do
+        before do
+          @unauthed_object_response ||= @unauthed_client.get(object_url.gsub('<key>','-1'))
+          @response = @unauthed_object_response.dup
+        end
+        it "should have organization_KEY undefined" do
+          @response.body.content.should =~ /<data organization_KEY="undefined">/
+        end
+      end
+      describe "when authenticated, but we don't have access" do
+        before do
+          @authed_object_response ||= @authed_client.get(object_url.gsub('<key>','-1'))
+          @response = @authed_object_response.dup
+        end
+        it "should have organization_KEY undefined, which is unfortunately the same response as unauthenticated" do
+          @response.body.content.should =~ /<data organization_KEY="undefined">/
+        end
+      end
+      describe "when authenticated" do
+        before do
+          @r ||= @authed_client.get(objects_url.gsub('limit=0','limit=1'))
+          key = @r.body.content[/<supporter_KEY>(\d+)<\/supporter_KEY>/,1]
+          @authed_object_response ||= @authed_client.get(object_url.gsub('<key>',"#{key}"))
+          @response = @authed_object_response.dup
+        end
+        it "should have the same structure as supporter fixture" do
+          @response.body.content.should have_the_same_xml_structure_as(fixture_file_read('supporter_by_key.xml'))
         end
       end
     end
