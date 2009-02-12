@@ -1,5 +1,6 @@
 require File.dirname(__FILE__) + "/../../spec_helper"
 
+
 describe DemocracyInAction::API do
   before do
     @api = DemocracyInAction::API.new( api_arguments ) 
@@ -84,7 +85,14 @@ describe DemocracyInAction::API do
         @api.send(:param_link_hash, { 'test' => [5, 6, 7] } ).should == [ 'link=test&linkKey=5','link=test&linkKey=6','link=test&linkKey=7']
       end
       it "handles multiple table names" do
-        @api.send(:param_link_hash, { 'fail' => [72,19], 'test' => [5, 6, 7] } ).should == [ 'link=fail&linkKey=72', 'link=fail&linkKey=19', 'link=test&linkKey=5','link=test&linkKey=6','link=test&linkKey=7' ]
+        @api.send(:param_link_hash, 
+                  { 'fail' => [72,19], 
+                    'test' => [5, 6, 7] } ).should have_same_elements(
+                    [ 'link=test&linkKey=5', 
+                      'link=test&linkKey=6', 
+                      'link=test&linkKey=7',
+                      'link=fail&linkKey=19', 
+                      'link=fail&linkKey=72'] )
       end
       it "gets the right stuff back after build body" do
         @api.send(:build_body, :link => { 'test' => [5, 6, 7]} ).should =~ /link=test&linkKey=5&link=test&linkKey=6&link=test&linkKey=7/

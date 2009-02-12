@@ -11,9 +11,11 @@ require 'pp'
 require 'democracy_in_action'
 require 'democracy_in_action/test_methods'
 require 'spec/have_the_same_xml_structure'
+require 'spec/be_the_same_list'
 Spec::Runner.configure do |config|
 
   config.include(XmlStructureMatcher)
+  config.include(AggregateMatchers)
   DemocracyInAction::API.send :include, DemocracyInAction::TestMethods
   DemocracyInAction::API.disable!
 
