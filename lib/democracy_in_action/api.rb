@@ -1,11 +1,17 @@
 module DemocracyInAction
 
   # = Direct usage
+  #
   # Once you have initialized your API, you can send a direct request to the service:
-  #   @api.request :save, { :object => 'supporter', :Email => 'jones@example.org' } 
-  # This method will ping any url that the API was initialized with, and append the options hash directly to the query string.
   # 
-  # Most actions can be accomplished via the REST methods ( get, post, put, and delete ).  
+  #   @api.request :save, { :object => 'supporter', :Email => 'jones@example.org' } 
+  # 
+  # This method will ping any url that the API was initialized with,
+  # and append the options hash directly to the query string.
+  # 
+  # Most actions can be accomplished via the REST methods ( get, post,
+  # put, and delete ).
+  #
   #   @api.get    :object => 'groups', :condition => { :Group_Name => 'Peaceful Warriors' }
   #   @api.post   :object => 'groups', :Group_Name => 'Grannies Against the Surge'
   #   @api.put    :object => 'groups', :Group_Name => 'Grannies Against McSame', :key => 234 # requires a key
@@ -15,16 +21,21 @@ module DemocracyInAction
   #   @api.count :object => 'groups', :condition => "Group Name LIKE '%Grannies%'"
   #
   # To save a record that may or may not already exist, use :post or :save
-  #   @api.save   :object => 'supporter', :Email => 'jesus@example.org', :First_Name => 'Jesus', :Last_Name => 'Murphy'
+  # 
+  #   @api.save   :object => 'supporter', :Email => 'jesus@example.org', 
+  #               :First_Name => 'Jesus', :Last_Name => 'Murphy'
   #
-  # All actions called with this direct usage syntax *require* an :object to be specified in the options hash.
+  # All actions called with this direct usage syntax *require* an
+  # :object to be specified in the options hash.
   #
-  # This syntax does not permit single integer arguments for keys, only { :key => value } 
+  # This syntax does not permit single integer arguments for keys,
+  # only { :key => value }
   #
   # = Object syntax
-  # Because every API request requires an object type, 
-  # the API provides you with a set of instance methods to improve the readablity of your code.  
-  # The examples above could be written:
+  # 
+  # Because every API request requires an object type, the API
+  # provides you with a set of instance methods to improve the
+  # readablity of your code.  The examples above could be written:
   #
   #   @api.groups.get    :condition => { :Group_Name => 'Peaceful Warriors' }
   #   #  => [ DIA::Result ]
@@ -51,6 +62,7 @@ module DemocracyInAction
   #   #  => DIA::Result ( first returns a single result rather than an array of results )
   #
   # Sort your results with the :orderBy option.
+  # 
   #   @api.groups.first  :condition => 'Group_Name LIKE '%Peaceful%', :orderBy => 'Date_Created DESC'
   #   #  => DIA::Result (the most recent group)
   #
@@ -59,7 +71,8 @@ module DemocracyInAction
   #   @api.groups.all     :condition => { :Group_Name => 'Peaceful Warriors' }
   #   # => [ DIA::Result ]
   #
-  # If you already have the key(s) of the results you want, you can pass those to get directly:
+  # If you already have the key(s) of the results you want, you can
+  # pass those to get directly:
   #
   #   @api.groups.get(234)
   #   # => DIA::Result
@@ -67,27 +80,41 @@ module DemocracyInAction
   #   # => [ DIA::Result, DIA::Result, DIA::Result, DIA::Result ]
   #
   # == Creating new records
-  # All options passed to post or save will attempt to match a field on the object.  Matching options will be saved to the service.
+  # 
+  # All options passed to post or save will attempt to match a field
+  # on the object.  Matching options will be saved to the service.
+  # 
   #   @api.event.post   :Event_Name => 'Mango Street Block Party', :City => 'New York', :State => 'NY'
   #   #  => 334455
   #   @api.event.save   :Event_Name => 'Papaya Way Block Party'
   #   #  => 334456
   #
   # == Linking records
-  # It is possible to link records together by passing a :link option to put, post, or save.
+  # 
+  # It is possible to link records together by passing a :link option
+  # to put, post, or save.
+  # 
   #   @api.supporter.post   :Email => 'dropkick@example.com', :link => { :event => 334455 }
   #   #  => 76544  This supporter is attending Mango Street Block Party
+  # 
   # Multiple Records can be linked with a single request.
+  # 
   #   @api.supporter.put   :key => 76544 , :link => { :event => 334455, :group => [ 234, 235 ] }
   #   #  => 76544  This supporter is attending Mango Street Block Party, and is a member of Grannies Against McSame and another group
   #
   # == Updating records
-  # Passing a key or email identifier in your save, put, or post request tells the service to update the existing record.
+  # 
+  # Passing a key or email identifier in your save, put, or post
+  # request tells the service to update the existing record.
+  # 
   #   @api.supporter.put   :key => 76544 , :City => 'Albany', :State => 'NY'
   #   #  => 76544  
   #
   # == Deleting records
-  # Delete returns true or nil if the delete operation fails.  A numeric key is the only valid option for delete.
+  # 
+  # Delete returns true or nil if the delete operation fails.  A
+  # numeric key is the only valid option for delete.
+  # 
   #   @api.groups.delete :key => 234
   #   # => true
   #   @api.groups.delete(234)
@@ -98,8 +125,11 @@ module DemocracyInAction
   #      [0-9a-zA-Z_ .'"<>!=%+&@-]
   #    Putting other characters in names ( like , ) make searching by name not work.
   # 2. Cannot search the supporter_groups links by groups_KEY.
-  # 3. DIA does not validate link ids.  You can link supporters to invalid group keys (and vice versa).  You are responsible for your data integrity
-  # 4. When deleting a group, the linked records in supporter_groups are not erased (but when deleting supporter, they are)
+  # 3. DIA does not validate link ids.  You can link supporters to
+  #    invalid group keys (and vice versa).  You are responsible for
+  #    your data integrity
+  # 4. When deleting a group, the linked records in supporter_groups
+  #    are not erased (but when deleting supporter, they are)
   
   class API
     class InvalidKey < ArgumentError #:nodoc:
@@ -146,14 +176,17 @@ module DemocracyInAction
       }
 
     # The username used to login to your Democracy in Action account.
-    attr_accessor :username
+    attr_reader :username
+
     # The password used to login to your Democracy in Action account.
-    attr_accessor :password
+    attr_reader :password
+
     # node is a short key representing DIA servers that are known to the library ( see NODES )
-    attr_accessor :node
+    attr_reader :node
+
     # For new nodes or custom scripts you may wish to specify a hash of custom urls
-    attr_accessor :urls
-    attr_reader :options
+    attr_reader :urls
+    
 
     # Requires an options hash containing: :username, :password, and :node
     #   
@@ -161,18 +194,41 @@ module DemocracyInAction
     #
     # If a :urls hash is used, it should have the form:
     #   :urls => { :get => "get_url", :save => "save_url", :delete => "delete_url" }
-    def initialize(options = {})
-      @options = options
+    # 
+    # TODO(adam): Please write a test to test this assumption.
+    # 
+    # Cavet: Its okay to initialize w/out validaton data; but a
+    # ConnectionInvalid error will be raised on the first attempt to
+    # make an RPC call that requires validaton.
+    # 
+    def initialize(options={}, username=nil, password=nil, node=nil, urls=nil)
+      @options = options.clone 
+
+      @username = username
+      @password = password
+      @node = node 
+      @urls = urls 
+
+      set_auth_parameters 
+    end
+
+    def set_auth_parameters
+      @username ||= @options.delete(:username) || @options.delete(:email)
+      @password ||= @options.delete(:password)
+      @node     ||= @options.delete(:node)
+      @urls     ||= @options[:urls] || NODES[node]
+    end
+
+    def load_config(keyword)
+      YAML.load_file("#{File.dirname(__FILE__)}/../../config/nodes/#{keyword}.yml")
+    end
+
+    def test_auth_parameters
+      raise ConnectionInvalid.new("Must specify :username, :password, and ( :node or :url )") unless self.username && self.password && ( self.node || @options[:urls] )
     end
 
     def validate_connection
-      self.username ||= options.delete(:username) || options.delete(:email)
-      self.password ||= options.delete(:password)
-      self.node     ||= options.delete(:node)
-      unless self.username && self.password && ( self.node || options[:urls] )
-        raise ConnectionInvalid.new("Must specify :username, :password, and ( :node or :url )")
-      end 
-      self.urls ||= options[:urls] || NODES[node]
+      test_auth_parameters
       raise ConnectionInvalid.new("Requested node is not supported.  Use (#{NODES.keys.join(', ')}) or specify a custom array in :urls") unless urls
       raise ConnectionInvalid.new("Urls must be a hash") unless urls.is_a?(Hash)
       raise ConnectionInvalid.new("Urls must include at least :get and :authenticate ( :save, :delete, and :count are nice too )") unless urls[:get] && urls[:authenticate]
@@ -182,7 +238,8 @@ module DemocracyInAction
     def connected?
       begin
         return @authenticated || authenticate 
-      rescue SocketError, ConnectionInvalid #means the library cannot reach the DIA server at all, or no internet is available
+      rescue SocketError, ConnectionInvalid 
+        # The library cannot reach the DIA server.  Connectivity problem?
         false
       end
     end
@@ -416,7 +473,9 @@ module DemocracyInAction
       @client || authenticate
     end
 
-    # Checks for a method being one of the supported objects and returns a TableProxy if it is
+    # Checks for a method being one of the supported objects and
+    # returns a TableProxy if it is
+    
     def method_missing(*args) #:nodoc:
       table_name = args.first
       
@@ -428,10 +487,13 @@ module DemocracyInAction
 
   end
 
-  # This class acts as a placeholder for DIA objects.  It automatically includes
-  # :object => [object_name] in the options hash that is passed along to the API.
+  # This class acts as a placeholder for DIA objects.  It
+  # automatically includes :object => [object_name] in the options
+  # hash that is passed along to the API.
   #
-  # All methods not listed in TABLE_PROXY_METHODS are passed along to the API with their original arguments.
+  # All methods not listed in TABLE_PROXY_METHODS are passed along to
+  # the API with their original arguments.
+
   class TableProxy #:nodoc:
     TABLE_PROXY_METHODS = [:get, :save, :delete, :columns, :count, :put, :post, :first, :all ]
     TABLE_PROXY_METHODS.each { |method| undef_method( method ) if instance_methods.include?( method.to_s ) }

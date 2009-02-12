@@ -11,6 +11,7 @@ describe DemocracyInAction::API do
     api.stub!(:authentication_request).and_return(fixture_file_read('valid_auth.xml'))
     api.should be_connected
   end
+
   it "it is not connected when passed bad arguments" do
     api = DemocracyInAction::API.new( api_arguments )
     api.stub!(:authentication_request).and_return(fixture_file_read('invalid_auth.xml'))
@@ -45,8 +46,8 @@ describe DemocracyInAction::API do
     end
 
     it "raises an error if an unsupported node is passed" do
-      @api.node = :joe
-      @api.urls = nil
+      @api.instance_variable_set(:@node, :joe)
+      @api.instance_variable_set(:@urls, nil)
       lambda { @api.validate_connection }.should raise_error
     end
 
@@ -56,8 +57,10 @@ describe DemocracyInAction::API do
         @args.delete(:node)
       end
       it "raises an error if the urls are bad" do
-        @api.urls = {:joe => 'bears'}
-        @api.node = nil
+        #TODO(adam): Too much nesting, perhpps setup fresh connection object?
+        #TODO(adam): Rework nest to not require instance_variable_set
+        @api.instance_variable_set(:@urls, {:joe => 'bears'})
+        @api.instance_variable_set(:@nodes, nil)
         lambda {@api.validate_connection}.should raise_error( DemocracyInAction::API::ConnectionInvalid )
       end
       it "raises no error if all required urls are given" do
