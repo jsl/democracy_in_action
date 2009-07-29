@@ -1,24 +1,25 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<data organization_KEY="74">
+<?xml version="1.0"?>
+<data organization_KEY="8036">
   <supporter>
     <item>
       <Receive_Phone_Blasts_BOOLVALUE>false</Receive_Phone_Blasts_BOOLVALUE>
-      <Hard_Bounce_Count/>
-      <Phone/>
+      <Hard_Bounce_Count>0</Hard_Bounce_Count>
+      <Phone>5556661234</Phone>
       <Receive_Phone_Blasts>false</Receive_Phone_Blasts>
       <Occupation/>
-      <Source_Details>(No Referring info)</Source_Details>
+      <Source_Details>https://sandbox.salsalabs.com/dia/hq/supporter/</Source_Details>
       <Source>Web</Source>
       <Pager/>
-      <State/>
+      <State>NY</State>
       <object>supporter</object>
+      <Language_Code>eng</Language_Code>
       <Alternative_Email/>
-      <Timezone/>
+      <Timezone>America/New_York</Timezone>
       <PRIVATE_Zip_Plus_4>0000</PRIVATE_Zip_Plus_4>
-      <Latitude/>
-      <Country/>
-      <organization_KEY>74</organization_KEY>
-      <Cell_Phone/>
+      <Latitude>0.000000</Latitude>
+      <Country>US</Country>
+      <organization_KEY>8036</organization_KEY>
+      <Cell_Phone>6462211189</Cell_Phone>
       <Email_Preference>HTML Email</Email_Preference>
       <Work_Fax/>
       <Notes/>
@@ -26,43 +27,42 @@
       <Web_Page/>
       <Work_Phone/>
       <Source_Tracking_Code>(No Original Source Available)</Source_Tracking_Code>
-      <First_Name/>
+      <First_Name>Michael</First_Name>
       <Home_Fax/>
       <Instant_Messenger_Name/>
-      <Soft_Bounce_Count/>
-      <Street_2/>
+      <Soft_Bounce_Count>0</Soft_Bounce_Count>
+      <Street_2>Apt A</Street_2>
       <Street_3/>
-      <Phone_Provider/>
+      <Phone_Provider>AT&amp;T</Phone_Provider>
       <Organization/>
-      <Email_Status/>
+      <Email_Status>N/A</Email_Status>
       <Tracking_Code/>
       <Other_Data_1/>
       <Other_Data_2/>
       <Other_Data_3/>
       <Title/>
-      <key>28144846</key>
-      <length>59</length>
+      <key>28417893</key>
+      <length>60</length>
       <Suffix/>
       <County/>
       <District/>
       <Instant_Messenger_Service/>
-      <Date_Created>Wed Sep 24 2008 19:27:28 GMT-0400 (EDT)</Date_Created>
-      <Last_Name/>
+      <Date_Created>Tue Jul 28 2009 14:26:09 GMT-0400 (EDT)</Date_Created>
+      <Last_Name>Jordan</Last_Name>
       <Last_Bounce/>
-      <Email/>
-      <City/>
-      <Last_Modified>Wed Sep 24 2008 19:27:28 GMT-0400 (EDT)</Last_Modified>
+      <Email>michael.jordan@mcommons.com</Email>
+      <City>Albany</City>
+      <Last_Modified>Tue Jul 28 2009 15:53:55 GMT-0400 (EDT)</Last_Modified>
       <Department/>
-      <Zip/>
+      <Zip>10007</Zip>
       <uid/>
-      <Password/>
-      <Longitude/>
+      <Password>d41d8cd98f00b204e9800998ecf8427e</Password>
+      <Longitude>0.000000</Longitude>
       <MI/>
-      <supporter_KEY>28144846</supporter_KEY>
-      <Status/>
-      <Street/>
+      <supporter_KEY>28417893</supporter_KEY>
+      <Status>Active</Status>
+      <Street>1 Main St</Street>
       <chapter_KEY/>
     </item>
-    <count>1</count>
   </supporter>
 </data>

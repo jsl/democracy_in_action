@@ -25,6 +25,7 @@ Spec::Runner.configure do |config|
     node = ENV['DIA_NODE'] || :salsa
     {:username => user, :password => pass, :node => node }
   end
+  
   def working_api_arguments
     user = ENV['DIA_USER'] || 'demo'
     pass = ENV['DIA_PASS'] || 'demo'
